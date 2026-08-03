@@ -1,0 +1,42 @@
+.dart_tool/
+.packages
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+.idea/
+.vscode/
+*.iml
+
+android/.gradle/
+android/local.properties
+android/key.properties
+*.jks
+*.keystore
+
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/ephemeral/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+
+# Ambiente
+.env
+.env.*
+!.env.example
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Bancos locais
+*.db
+*.sqlite
+*.sqlite3
+
+# Cobertura
+coverage/
