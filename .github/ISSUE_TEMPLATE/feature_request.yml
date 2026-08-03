@@ -1,0 +1,39 @@
+name: Solicitar funcionalidade
+description: Proponha uma melhoria ou nova capacidade para o CondoLeitura.
+title: "feat: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema a resolver
+      description: Qual dificuldade prática esta funcionalidade resolve?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solução proposta
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critérios de aceitação
+      placeholder: |
+        - [ ] Dado que...
+        - [ ] Quando...
+        - [ ] Então...
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridade sugerida
+      options:
+        - Baixa
+        - Média
+        - Alta
+        - Crítica
+    validations:
+      required: true

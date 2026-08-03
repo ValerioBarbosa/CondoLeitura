@@ -84,3 +84,19 @@ Este pacote contém a estrutura atualizada do CondoLeitura 1.0.0 com:
 - documentação de arquitetura;
 - migrations e políticas do Supabase;
 - testes iniciais.
+
+## Desenvolvimento e GitHub
+
+O projeto utiliza o fluxo `feature/* -> develop -> main`, Pull Requests e GitHub Actions para formatação, análise, testes, geração manual de APK e Releases por tag.
+
+Consulte:
+
+- [`CONTRIBUTING.md`](CONTRIBUTING.md)
+- [`docs/07_GITHUB_WORKFLOW.md`](docs/07_GITHUB_WORKFLOW.md)
+- [`SECURITY.md`](SECURITY.md)
+
+Validação local no Windows:
+
+```powershell
+.\scripts\check.ps1
+```

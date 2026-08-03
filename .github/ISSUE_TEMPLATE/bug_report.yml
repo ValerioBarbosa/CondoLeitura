@@ -1,0 +1,58 @@
+name: Relatar erro
+description: Registre um comportamento incorreto ou falha do CondoLeitura.
+title: "bug: "
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Descrição
+      description: Explique o erro de forma objetiva.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      placeholder: |
+        1. Abra...
+        2. Toque em...
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versão do aplicativo
+      placeholder: 1.0.0+1
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Plataforma
+      options:
+        - Android
+        - iOS
+        - Windows
+        - Web
+        - Outra
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs ou evidências
+      description: Remova dados pessoais e credenciais antes de enviar.
+      render: shell
+  - type: checkboxes
+    id: security
+    attributes:
+      label: Segurança
+      options:
+        - label: Confirmei que não incluí senhas, tokens, chaves ou dados pessoais.
+          required: true
