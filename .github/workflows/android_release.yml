@@ -1,14 +1,14 @@
-name: Android APK
+name: Android Build
 
 on:
   workflow_dispatch:
     inputs:
       build_name:
-        description: Version name, for example 1.0.0
+        description: "Versão, por exemplo 1.0.0"
         required: false
         type: string
       build_number:
-        description: Integer build number, for example 1
+        description: "Número inteiro do build, por exemplo 1"
         required: false
         type: string
 
@@ -16,14 +16,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: android-apk-${{ github.ref }}
+  group: android-build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-apk:
-    name: Build release APK
+  build:
+    name: Build APK and AAB
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
@@ -33,7 +33,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
           cache: gradle
 
       - name: Set up Flutter
@@ -45,13 +45,16 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
       - name: Analyze project
-        run: flutter analyze
+        run: flutter analyze --fatal-infos
 
       - name: Run tests
         run: flutter test
 
-      - name: Build APK
+      - name: Build Android artifacts
         shell: bash
         run: |
           args=(--release)
@@ -62,11 +65,20 @@ jobs:
             args+=(--build-number "${{ inputs.build_number }}")
           fi
           flutter build apk "${args[@]}"
+          flutter build appbundle "${args[@]}"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: CondoLeitura-APK-${{ github.run_number }}
+          name: CondoLeitura-release-apk-${{ github.run_number }}
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: CondoLeitura-release-aab-${{ github.run_number }}
+          path: build/app/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 30

@@ -3,6 +3,9 @@ name: Flutter CI
 on:
   push:
     branches: [main, develop]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
@@ -16,7 +19,7 @@ concurrency:
 
 jobs:
   quality:
-    name: Analyze, format and test
+    name: Format, analyze and test
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -30,20 +33,26 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Show Flutter version
-        run: flutter --version
+      - name: Show tool versions
+        run: |
+          flutter --version
+          dart --version
+          java -version
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Verify lockfile is synchronized
+        run: git diff --exit-code -- pubspec.lock
 
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed lib test
 
       - name: Analyze project
-        run: flutter analyze
+        run: flutter analyze --fatal-infos
 
-      - name: Run tests
-        run: flutter test --coverage
+      - name: Run tests with coverage
+        run: flutter test --coverage --reporter expanded
 
       - name: Upload coverage report
         if: always()
@@ -51,5 +60,43 @@ jobs:
         with:
           name: flutter-coverage-${{ github.run_number }}
           path: coverage/lcov.info
-          if-no-files-found: ignore
+          if-no-files-found: warn
           retention-days: 14
+
+  build-debug-apk:
+    name: Build debug APK
+    if: github.event_name != 'pull_request'
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: CondoLeitura-debug-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7

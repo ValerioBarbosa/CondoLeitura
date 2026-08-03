@@ -19,15 +19,12 @@ class _TowersScreenState extends State<TowersScreen> {
   @override
   Widget build(BuildContext context) {
     final data = context.watch<AppData>();
-    final towers = data
-        .towersFor(widget.condominium.id)
-        .where((tower) {
-          final query = _query.trim().toLowerCase();
-          if (query.isEmpty) return true;
-          return tower.name.toLowerCase().contains(query) ||
-              tower.code.toLowerCase().contains(query);
-        })
-        .toList();
+    final towers = data.towersFor(widget.condominium.id).where((tower) {
+      final query = _query.trim().toLowerCase();
+      if (query.isEmpty) return true;
+      return tower.name.toLowerCase().contains(query) ||
+          tower.code.toLowerCase().contains(query);
+    }).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -132,7 +129,9 @@ class _TowersScreenState extends State<TowersScreen> {
                         Chip(
                           label: Text(tower.isActive ? 'Ativa' : 'Inativa'),
                           avatar: Icon(
-                            tower.isActive ? Icons.check_circle_outline : Icons.pause_circle_outline,
+                            tower.isActive
+                                ? Icons.check_circle_outline
+                                : Icons.pause_circle_outline,
                             size: 18,
                           ),
                         ),
@@ -165,11 +164,13 @@ class _TowersScreenState extends State<TowersScreen> {
                               content: Text('Deseja excluir “${tower.name}”?'),
                               actions: [
                                 TextButton(
-                                  onPressed: () => Navigator.pop(dialogContext, false),
+                                  onPressed: () =>
+                                      Navigator.pop(dialogContext, false),
                                   child: const Text('Cancelar'),
                                 ),
                                 FilledButton(
-                                  onPressed: () => Navigator.pop(dialogContext, true),
+                                  onPressed: () =>
+                                      Navigator.pop(dialogContext, true),
                                   child: const Text('Excluir'),
                                 ),
                               ],
@@ -261,7 +262,6 @@ class _TowerDialogState extends State<TowerDialog> {
     return null;
   }
 
-
   @override
   Widget build(BuildContext context) {
     final editing = widget.tower != null;
@@ -302,7 +302,8 @@ class _TowerDialogState extends State<TowerDialog> {
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Torre ativa'),
-                  subtitle: const Text('Torres inativas permanecem cadastradas.'),
+                  subtitle:
+                      const Text('Torres inativas permanecem cadastradas.'),
                   value: _isActive,
                   onChanged: (value) => setState(() => _isActive = value),
                 ),

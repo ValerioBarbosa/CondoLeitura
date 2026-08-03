@@ -67,7 +67,8 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 NavigationRail(
                   selectedIndex: _index,
-                  onDestinationSelected: (value) => setState(() => _index = value),
+                  onDestinationSelected: (value) =>
+                      setState(() => _index = value),
                   labelType: NavigationRailLabelType.all,
                   destinations: const [
                     NavigationRailDestination(
@@ -108,11 +109,16 @@ class _HomeScreenState extends State<HomeScreen> {
               selectedIndex: _index,
               onDestinationSelected: (value) => setState(() => _index = value),
               destinations: const [
-                NavigationDestination(icon: Icon(Icons.dashboard_outlined), label: 'Início'),
-                NavigationDestination(icon: Icon(Icons.apartment_outlined), label: 'Condomínios'),
-                NavigationDestination(icon: Icon(Icons.speed_outlined), label: 'Leituras'),
-                NavigationDestination(icon: Icon(Icons.analytics_outlined), label: 'Relatórios'),
-                NavigationDestination(icon: Icon(Icons.settings_outlined), label: 'Ajustes'),
+                NavigationDestination(
+                    icon: Icon(Icons.dashboard_outlined), label: 'Início'),
+                NavigationDestination(
+                    icon: Icon(Icons.apartment_outlined), label: 'Condomínios'),
+                NavigationDestination(
+                    icon: Icon(Icons.speed_outlined), label: 'Leituras'),
+                NavigationDestination(
+                    icon: Icon(Icons.analytics_outlined), label: 'Relatórios'),
+                NavigationDestination(
+                    icon: Icon(Icons.settings_outlined), label: 'Ajustes'),
               ],
             ),
     );
@@ -130,18 +136,35 @@ class DashboardPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        Text('Olá, Valério', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+        Text('Olá, Valério',
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
-        Text('Acompanhe a operação de leitura dos seus condomínios.', style: Theme.of(context).textTheme.bodyLarge),
+        Text('Acompanhe a operação de leitura dos seus condomínios.',
+            style: Theme.of(context).textTheme.bodyLarge),
         const SizedBox(height: 20),
         Wrap(
           spacing: 12,
           runSpacing: 12,
           children: [
-            MetricCard(icon: Icons.apartment, label: 'Condomínios', value: '${data.condominiums.length}'),
-            MetricCard(icon: Icons.home_work_outlined, label: 'Unidades', value: '${data.totalUnits}'),
-            MetricCard(icon: Icons.fact_check_outlined, label: 'Leituras', value: '${data.readings.length}'),
-            MetricCard(icon: Icons.water_drop_outlined, label: 'Consumo total', value: data.totalConsumption.toStringAsFixed(1)),
+            MetricCard(
+                icon: Icons.apartment,
+                label: 'Condomínios',
+                value: '${data.condominiums.length}'),
+            MetricCard(
+                icon: Icons.home_work_outlined,
+                label: 'Unidades',
+                value: '${data.totalUnits}'),
+            MetricCard(
+                icon: Icons.fact_check_outlined,
+                label: 'Leituras',
+                value: '${data.readings.length}'),
+            MetricCard(
+                icon: Icons.water_drop_outlined,
+                label: 'Consumo total',
+                value: data.totalConsumption.toStringAsFixed(1)),
           ],
         ),
         const SizedBox(height: 20),
@@ -154,7 +177,11 @@ class DashboardPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        Text('Leituras recentes', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        Text('Leituras recentes',
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         ...data.readings.take(4).map((item) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
@@ -166,7 +193,11 @@ class DashboardPage extends StatelessWidget {
 }
 
 class MetricCard extends StatelessWidget {
-  const MetricCard({super.key, required this.icon, required this.label, required this.value});
+  const MetricCard(
+      {super.key,
+      required this.icon,
+      required this.label,
+      required this.value});
   final IconData icon;
   final String label;
   final String value;
@@ -184,7 +215,11 @@ class MetricCard extends StatelessWidget {
             children: [
               CircleAvatar(child: Icon(icon)),
               const SizedBox(height: 14),
-              Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+              Text(value,
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.bold)),
               Text(label),
             ],
           ),
@@ -203,7 +238,8 @@ class CondominiumsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showDialog(context: context, builder: (_) => const CondominiumDialog()),
+        onPressed: () => showDialog(
+            context: context, builder: (_) => const CondominiumDialog()),
         icon: const Icon(Icons.add),
         label: const Text('Novo condomínio'),
       ),
@@ -211,12 +247,17 @@ class CondominiumsPage extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         children: [
           TextField(
-            decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Pesquisar condomínio'),
+            decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.search),
+                hintText: 'Pesquisar condomínio'),
             onChanged: (_) {},
           ),
           const SizedBox(height: 16),
           if (data.condominiums.isEmpty)
-            const EmptyState(icon: Icons.apartment_outlined, title: 'Nenhum condomínio', subtitle: 'Cadastre o primeiro condomínio para começar.')
+            const EmptyState(
+                icon: Icons.apartment_outlined,
+                title: 'Nenhum condomínio',
+                subtitle: 'Cadastre o primeiro condomínio para começar.')
           else
             ...data.condominiums.map((item) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
@@ -224,7 +265,8 @@ class CondominiumsPage extends StatelessWidget {
                     child: ListTile(
                       contentPadding: const EdgeInsets.all(16),
                       leading: const CircleAvatar(child: Icon(Icons.apartment)),
-                      title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      title: Text(item.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
                       subtitle: Text(
                         '${item.city} • ${data.towerCountFor(item.id)} torres cadastradas • '
                         '${data.unitCountFor(item.id)} unidades',
@@ -235,7 +277,8 @@ class CondominiumsPage extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => CondominiumDashboardScreen(condominium: item),
+                                builder: (_) => CondominiumDashboardScreen(
+                                    condominium: item),
                               ),
                             );
                           }
@@ -244,14 +287,17 @@ class CondominiumsPage extends StatelessWidget {
                           }
                         },
                         itemBuilder: (_) => const [
-                          PopupMenuItem(value: 'towers', child: Text('Abrir dashboard')),
-                          PopupMenuItem(value: 'delete', child: Text('Excluir')),
+                          PopupMenuItem(
+                              value: 'towers', child: Text('Abrir dashboard')),
+                          PopupMenuItem(
+                              value: 'delete', child: Text('Excluir')),
                         ],
                       ),
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => CondominiumDashboardScreen(condominium: item),
+                          builder: (_) =>
+                              CondominiumDashboardScreen(condominium: item),
                         ),
                       ),
                     ),
@@ -296,16 +342,23 @@ class _CondominiumDialogState extends State<CondominiumDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextFormField(controller: _name, decoration: const InputDecoration(labelText: 'Nome'), validator: requiredValidator),
+                TextFormField(
+                    controller: _name,
+                    decoration: const InputDecoration(labelText: 'Nome'),
+                    validator: requiredValidator),
                 const SizedBox(height: 12),
-                TextFormField(controller: _city, decoration: const InputDecoration(labelText: 'Cidade'), validator: requiredValidator),
+                TextFormField(
+                    controller: _city,
+                    decoration: const InputDecoration(labelText: 'Cidade'),
+                    validator: requiredValidator),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _units,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
                     labelText: 'Estimativa inicial de unidades',
-                    helperText: 'Será atualizada conforme as torres forem cadastradas.',
+                    helperText:
+                        'Será atualizada conforme as torres forem cadastradas.',
                   ),
                 ),
               ],
@@ -314,7 +367,9 @@ class _CondominiumDialogState extends State<CondominiumDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar')),
         FilledButton(
           onPressed: () {
             if (!(_formKey.currentState?.validate() ?? false)) return;
@@ -342,7 +397,10 @@ class ReadingsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: data.condominiums.isEmpty ? null : () => showDialog(context: context, builder: (_) => const ReadingDialog()),
+        onPressed: data.condominiums.isEmpty
+            ? null
+            : () => showDialog(
+                context: context, builder: (_) => const ReadingDialog()),
         icon: const Icon(Icons.add_a_photo_outlined),
         label: const Text('Registrar leitura'),
       ),
@@ -355,16 +413,28 @@ class ReadingsPage extends StatelessWidget {
               child: Row(children: [
                 const CircleAvatar(child: Icon(Icons.camera_alt_outlined)),
                 const SizedBox(width: 14),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Captura inteligente', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  const Text('Registre água ou gás. A conferência manual evita erro de leitura.'),
-                ])),
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text('Captura inteligente',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold)),
+                      const Text(
+                          'Registre água ou gás. A conferência manual evita erro de leitura.'),
+                    ])),
               ]),
             ),
           ),
           const SizedBox(height: 16),
           if (data.readings.isEmpty)
-            const EmptyState(icon: Icons.speed_outlined, title: 'Nenhuma leitura', subtitle: 'Registre a primeira leitura para gerar histórico e relatórios.')
+            const EmptyState(
+                icon: Icons.speed_outlined,
+                title: 'Nenhuma leitura',
+                subtitle:
+                    'Registre a primeira leitura para gerar histórico e relatórios.')
           else
             ...data.readings.map((item) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
@@ -374,10 +444,13 @@ class ReadingsPage extends StatelessWidget {
                     background: Container(
                       alignment: Alignment.centerRight,
                       padding: const EdgeInsets.only(right: 24),
-                      decoration: BoxDecoration(color: Theme.of(context).colorScheme.errorContainer, borderRadius: BorderRadius.circular(18)),
+                      decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.errorContainer,
+                          borderRadius: BorderRadius.circular(18)),
                       child: const Icon(Icons.delete_outline),
                     ),
-                    onDismissed: (_) => context.read<AppData>().removeReading(item.id),
+                    onDismissed: (_) =>
+                        context.read<AppData>().removeReading(item.id),
                     child: ReadingTile(item: item),
                   ),
                 )),
@@ -425,39 +498,71 @@ class _ReadingDialogState extends State<ReadingDialog> {
               DropdownButtonFormField<String>(
                 initialValue: _condominium,
                 decoration: const InputDecoration(labelText: 'Condomínio'),
-                items: condos.map((e) => DropdownMenuItem(value: e.name, child: Text(e.name))).toList(),
+                items: condos
+                    .map((e) =>
+                        DropdownMenuItem(value: e.name, child: Text(e.name)))
+                    .toList(),
                 onChanged: (value) => setState(() => _condominium = value),
               ),
               const SizedBox(height: 12),
-              TextFormField(controller: _unit, decoration: const InputDecoration(labelText: 'Unidade', hintText: 'Ex.: Torre A • 101'), validator: requiredValidator),
+              TextFormField(
+                  controller: _unit,
+                  decoration: const InputDecoration(
+                      labelText: 'Unidade', hintText: 'Ex.: Torre A • 101'),
+                  validator: requiredValidator),
               const SizedBox(height: 12),
               SegmentedButton<String>(
                 segments: const [
-                  ButtonSegment(value: 'Água', icon: Icon(Icons.water_drop_outlined), label: Text('Água')),
-                  ButtonSegment(value: 'Gás', icon: Icon(Icons.local_fire_department_outlined), label: Text('Gás')),
+                  ButtonSegment(
+                      value: 'Água',
+                      icon: Icon(Icons.water_drop_outlined),
+                      label: Text('Água')),
+                  ButtonSegment(
+                      value: 'Gás',
+                      icon: Icon(Icons.local_fire_department_outlined),
+                      label: Text('Gás')),
                 ],
                 selected: {_type},
-                onSelectionChanged: (value) => setState(() => _type = value.first),
+                onSelectionChanged: (value) =>
+                    setState(() => _type = value.first),
               ),
               const SizedBox(height: 12),
               Row(children: [
-                Expanded(child: TextFormField(controller: _previous, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Leitura anterior'), validator: numberValidator)),
+                Expanded(
+                    child: TextFormField(
+                        controller: _previous,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        decoration: const InputDecoration(
+                            labelText: 'Leitura anterior'),
+                        validator: numberValidator)),
                 const SizedBox(width: 12),
-                Expanded(child: TextFormField(controller: _current, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Leitura atual'), validator: numberValidator)),
+                Expanded(
+                    child: TextFormField(
+                        controller: _current,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        decoration:
+                            const InputDecoration(labelText: 'Leitura atual'),
+                        validator: numberValidator)),
               ]),
             ]),
           ),
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar')),
         FilledButton(
           onPressed: () {
             if (!(_formKey.currentState?.validate() ?? false)) return;
             final previous = parseNumber(_previous.text);
             final current = parseNumber(_current.text);
             if (current < previous) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A leitura atual não pode ser menor que a anterior.')));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text(
+                      'A leitura atual não pode ser menor que a anterior.')));
               return;
             }
             context.read<AppData>().addReading(
@@ -485,15 +590,28 @@ class ReadingTile extends StatelessWidget {
     final water = item.meterType == 'Água';
     return Card(
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        leading: CircleAvatar(child: Icon(water ? Icons.water_drop_outlined : Icons.local_fire_department_outlined)),
-        title: Text('${item.unit} • ${item.meterType}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('${item.condominium}\n${DateFormat('dd/MM/yyyy HH:mm').format(item.createdAt)}'),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        leading: CircleAvatar(
+            child: Icon(water
+                ? Icons.water_drop_outlined
+                : Icons.local_fire_department_outlined)),
+        title: Text('${item.unit} • ${item.meterType}',
+            style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(
+            '${item.condominium}\n${DateFormat('dd/MM/yyyy HH:mm').format(item.createdAt)}'),
         isThreeLine: true,
-        trailing: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text(item.currentValue.toStringAsFixed(1), style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-          Text('+${item.consumption.toStringAsFixed(1)}'),
-        ]),
+        trailing: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(item.currentValue.toStringAsFixed(1),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+              Text('+${item.consumption.toStringAsFixed(1)}'),
+            ]),
       ),
     );
   }
@@ -505,22 +623,39 @@ class ReportsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = context.watch<AppData>();
-    final water = data.readings.where((e) => e.meterType == 'Água').fold<double>(0, (sum, e) => sum + e.consumption);
-    final gas = data.readings.where((e) => e.meterType == 'Gás').fold<double>(0, (sum, e) => sum + e.consumption);
+    final water = data.readings
+        .where((e) => e.meterType == 'Água')
+        .fold<double>(0, (sum, e) => sum + e.consumption);
+    final gas = data.readings
+        .where((e) => e.meterType == 'Gás')
+        .fold<double>(0, (sum, e) => sum + e.consumption);
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        Text('Resumo operacional', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+        Text('Resumo operacional',
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(children: [
-              ReportRow(icon: Icons.water_drop_outlined, label: 'Consumo de água', value: water.toStringAsFixed(1)),
+              ReportRow(
+                  icon: Icons.water_drop_outlined,
+                  label: 'Consumo de água',
+                  value: water.toStringAsFixed(1)),
               const Divider(height: 28),
-              ReportRow(icon: Icons.local_fire_department_outlined, label: 'Consumo de gás', value: gas.toStringAsFixed(1)),
+              ReportRow(
+                  icon: Icons.local_fire_department_outlined,
+                  label: 'Consumo de gás',
+                  value: gas.toStringAsFixed(1)),
               const Divider(height: 28),
-              ReportRow(icon: Icons.fact_check_outlined, label: 'Leituras registradas', value: '${data.readings.length}'),
+              ReportRow(
+                  icon: Icons.fact_check_outlined,
+                  label: 'Leituras registradas',
+                  value: '${data.readings.length}'),
             ]),
           ),
         ),
@@ -528,17 +663,29 @@ class ReportsPage extends StatelessWidget {
         Card(
           child: Padding(
             padding: const EdgeInsets.all(20),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text('Exportação', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              const Text('Os serviços de PDF, Excel e compartilhamento já estão preparados no projeto.'),
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: data.readings.isEmpty ? null : () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Relatório preparado. Integração de arquivo disponível na versão móvel.'))),
-                icon: const Icon(Icons.picture_as_pdf_outlined),
-                label: const Text('Gerar relatório'),
-              ),
-            ]),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('Exportação',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  const Text(
+                      'Os serviços de PDF, Excel e compartilhamento já estão preparados no projeto.'),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: data.readings.isEmpty
+                        ? null
+                        : () => ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text(
+                                    'Relatório preparado. Integração de arquivo disponível na versão móvel.'))),
+                    icon: const Icon(Icons.picture_as_pdf_outlined),
+                    label: const Text('Gerar relatório'),
+                  ),
+                ]),
           ),
         ),
       ],
@@ -547,7 +694,11 @@ class ReportsPage extends StatelessWidget {
 }
 
 class ReportRow extends StatelessWidget {
-  const ReportRow({super.key, required this.icon, required this.label, required this.value});
+  const ReportRow(
+      {super.key,
+      required this.icon,
+      required this.label,
+      required this.value});
   final IconData icon;
   final String label;
   final String value;
@@ -557,7 +708,11 @@ class ReportRow extends StatelessWidget {
       CircleAvatar(child: Icon(icon)),
       const SizedBox(width: 14),
       Expanded(child: Text(label)),
-      Text(value, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+      Text(value,
+          style: Theme.of(context)
+              .textTheme
+              .titleLarge
+              ?.copyWith(fontWeight: FontWeight.bold)),
     ]);
   }
 }
@@ -580,19 +735,37 @@ class _SettingsPageState extends State<SettingsPage> {
       children: [
         Card(
           child: Column(children: [
-            SwitchListTile(value: _confirmReading, onChanged: (v) => setState(() => _confirmReading = v), title: const Text('Confirmar leitura'), subtitle: const Text('Exigir revisão antes de salvar.')),
+            SwitchListTile(
+                value: _confirmReading,
+                onChanged: (v) => setState(() => _confirmReading = v),
+                title: const Text('Confirmar leitura'),
+                subtitle: const Text('Exigir revisão antes de salvar.')),
             const Divider(height: 1),
-            SwitchListTile(value: _location, onChanged: (v) => setState(() => _location = v), title: const Text('Registrar localização'), subtitle: const Text('Salvar GPS junto da leitura.')),
+            SwitchListTile(
+                value: _location,
+                onChanged: (v) => setState(() => _location = v),
+                title: const Text('Registrar localização'),
+                subtitle: const Text('Salvar GPS junto da leitura.')),
             const Divider(height: 1),
-            SwitchListTile(value: _sync, onChanged: (v) => setState(() => _sync = v), title: const Text('Sincronização automática'), subtitle: const Text('Enviar dados quando houver internet.')),
+            SwitchListTile(
+                value: _sync,
+                onChanged: (v) => setState(() => _sync = v),
+                title: const Text('Sincronização automática'),
+                subtitle: const Text('Enviar dados quando houver internet.')),
           ]),
         ),
         const SizedBox(height: 16),
         const Card(
           child: Column(children: [
-            ListTile(leading: Icon(Icons.storage_outlined), title: Text('Banco local'), subtitle: Text('Dados disponíveis offline')),
+            ListTile(
+                leading: Icon(Icons.storage_outlined),
+                title: Text('Banco local'),
+                subtitle: Text('Dados disponíveis offline')),
             Divider(height: 1),
-            ListTile(leading: Icon(Icons.info_outline), title: Text('Versão'), trailing: Text('1.0.0')),
+            ListTile(
+                leading: Icon(Icons.info_outline),
+                title: Text('Versão'),
+                trailing: Text('1.0.0')),
           ]),
         ),
       ],
@@ -601,7 +774,11 @@ class _SettingsPageState extends State<SettingsPage> {
 }
 
 class EmptyState extends StatelessWidget {
-  const EmptyState({super.key, required this.icon, required this.title, required this.subtitle});
+  const EmptyState(
+      {super.key,
+      required this.icon,
+      required this.title,
+      required this.subtitle});
   final IconData icon;
   final String title;
   final String subtitle;
@@ -612,7 +789,11 @@ class EmptyState extends StatelessWidget {
       child: Column(children: [
         Icon(icon, size: 64, color: Theme.of(context).colorScheme.primary),
         const SizedBox(height: 12),
-        Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        Text(title,
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
         Text(subtitle, textAlign: TextAlign.center),
       ]),
@@ -620,6 +801,10 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-String? requiredValidator(String? value) => value == null || value.trim().isEmpty ? 'Campo obrigatório' : null;
-String? numberValidator(String? value) => double.tryParse((value ?? '').replaceAll(',', '.')) == null ? 'Número inválido' : null;
+String? requiredValidator(String? value) =>
+    value == null || value.trim().isEmpty ? 'Campo obrigatório' : null;
+String? numberValidator(String? value) =>
+    double.tryParse((value ?? '').replaceAll(',', '.')) == null
+        ? 'Número inválido'
+        : null;
 double parseNumber(String value) => double.parse(value.replaceAll(',', '.'));

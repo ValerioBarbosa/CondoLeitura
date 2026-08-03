@@ -6,14 +6,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'tower.dart';
 
 class CondoItem {
-  CondoItem({required this.id, required this.name, required this.city, required this.towers, required this.units});
+  CondoItem(
+      {required this.id,
+      required this.name,
+      required this.city,
+      required this.towers,
+      required this.units});
   final String id;
   final String name;
   final String city;
   final int towers;
   final int units;
 
-  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'city': city, 'towers': towers, 'units': units};
+  Map<String, dynamic> toJson() =>
+      {'id': id, 'name': name, 'city': city, 'towers': towers, 'units': units};
   factory CondoItem.fromJson(Map<String, dynamic> json) => CondoItem(
         id: json['id'] as String,
         name: json['name'] as String,
@@ -24,7 +30,14 @@ class CondoItem {
 }
 
 class MeterReadingItem {
-  MeterReadingItem({required this.id, required this.condominium, required this.unit, required this.meterType, required this.previousValue, required this.currentValue, required this.createdAt});
+  MeterReadingItem(
+      {required this.id,
+      required this.condominium,
+      required this.unit,
+      required this.meterType,
+      required this.previousValue,
+      required this.currentValue,
+      required this.createdAt});
   final String id;
   final String condominium;
   final String unit;
@@ -43,7 +56,8 @@ class MeterReadingItem {
         'currentValue': currentValue,
         'createdAt': createdAt.toIso8601String(),
       };
-  factory MeterReadingItem.fromJson(Map<String, dynamic> json) => MeterReadingItem(
+  factory MeterReadingItem.fromJson(Map<String, dynamic> json) =>
+      MeterReadingItem(
         id: json['id'] as String,
         condominium: json['condominium'] as String,
         unit: json['unit'] as String,
@@ -67,7 +81,8 @@ class AppData extends ChangeNotifier {
   List<Tower> get towers => List.unmodifiable(_towers);
 
   List<Tower> towersFor(String condominiumId) {
-    final result = _towers.where((item) => item.condominiumId == condominiumId).toList();
+    final result =
+        _towers.where((item) => item.condominiumId == condominiumId).toList();
     result.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     return List.unmodifiable(result);
   }
@@ -81,8 +96,10 @@ class AppData extends ChangeNotifier {
     }
     return 0;
   }
+
   int get totalUnits => _condominiums.fold(0, (sum, item) => sum + item.units);
-  double get totalConsumption => _readings.fold(0, (sum, item) => sum + item.consumption);
+  double get totalConsumption =>
+      _readings.fold(0, (sum, item) => sum + item.consumption);
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -91,13 +108,16 @@ class AppData extends ChangeNotifier {
       final readingRaw = prefs.getString(_readingsKey);
       final towerRaw = prefs.getString(_towersKey);
       if (condoRaw != null) {
-        _condominiums.addAll((jsonDecode(condoRaw) as List).map((e) => CondoItem.fromJson(Map<String, dynamic>.from(e as Map))));
+        _condominiums.addAll((jsonDecode(condoRaw) as List).map(
+            (e) => CondoItem.fromJson(Map<String, dynamic>.from(e as Map))));
       }
       if (towerRaw != null) {
-        _towers.addAll((jsonDecode(towerRaw) as List).map((e) => Tower.fromJson(Map<String, dynamic>.from(e as Map))));
+        _towers.addAll((jsonDecode(towerRaw) as List)
+            .map((e) => Tower.fromJson(Map<String, dynamic>.from(e as Map))));
       }
       if (readingRaw != null) {
-        _readings.addAll((jsonDecode(readingRaw) as List).map((e) => MeterReadingItem.fromJson(Map<String, dynamic>.from(e as Map))));
+        _readings.addAll((jsonDecode(readingRaw) as List).map((e) =>
+            MeterReadingItem.fromJson(Map<String, dynamic>.from(e as Map))));
       }
     } catch (_) {
       _condominiums.clear();
@@ -105,20 +125,37 @@ class AppData extends ChangeNotifier {
       _towers.clear();
     }
     if (_condominiums.isEmpty) {
-      _condominiums.add(CondoItem(id: '1', name: 'Condomínio de Demonstração', city: 'Porto Alegre', towers: 4, units: 96));
+      _condominiums.add(CondoItem(
+          id: '1',
+          name: 'Condomínio de Demonstração',
+          city: 'Porto Alegre',
+          towers: 4,
+          units: 96));
     }
     notifyListeners();
   }
 
   Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_condosKey, jsonEncode(_condominiums.map((e) => e.toJson()).toList()));
-    await prefs.setString(_readingsKey, jsonEncode(_readings.map((e) => e.toJson()).toList()));
-    await prefs.setString(_towersKey, jsonEncode(_towers.map((e) => e.toJson()).toList()));
+    await prefs.setString(
+        _condosKey, jsonEncode(_condominiums.map((e) => e.toJson()).toList()));
+    await prefs.setString(
+        _readingsKey, jsonEncode(_readings.map((e) => e.toJson()).toList()));
+    await prefs.setString(
+        _towersKey, jsonEncode(_towers.map((e) => e.toJson()).toList()));
   }
 
-  void addCondominium({required String name, required String city, required int towers, required int units}) {
-    _condominiums.add(CondoItem(id: DateTime.now().microsecondsSinceEpoch.toString(), name: name, city: city, towers: towers, units: units));
+  void addCondominium(
+      {required String name,
+      required String city,
+      required int towers,
+      required int units}) {
+    _condominiums.add(CondoItem(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        name: name,
+        city: city,
+        towers: towers,
+        units: units));
     notifyListeners();
     _save();
   }
@@ -129,7 +166,6 @@ class AppData extends ChangeNotifier {
     notifyListeners();
     _save();
   }
-
 
   void addTower({
     required String condominiumId,
@@ -166,7 +202,12 @@ class AppData extends ChangeNotifier {
     _save();
   }
 
-  void addReading({required String condominium, required String unit, required String meterType, required double previousValue, required double currentValue}) {
+  void addReading(
+      {required String condominium,
+      required String unit,
+      required String meterType,
+      required double previousValue,
+      required double currentValue}) {
     _readings.add(MeterReadingItem(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       condominium: condominium,
