@@ -1,0 +1,13 @@
+1. Copie a pasta .github para a raiz do projeto CondoLeitura e substitua os arquivos existentes.
+2. No PowerShell, dentro do projeto:
+
+   dart format lib test
+   flutter analyze
+   flutter test
+   git add .github lib test
+   git commit -m "ci: improve Flutter CI and Android release workflows"
+   git push origin develop
+
+3. Abra GitHub > Actions e acompanhe a nova execução.
+
+Observação: os builds release ainda usarão a assinatura Android atualmente configurada no projeto. Para publicar na Play Store, configure uma keystore em GitHub Secrets numa etapa posterior.
