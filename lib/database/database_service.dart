@@ -28,7 +28,7 @@ class DatabaseService {
 
     return openDatabase(
       path,
-      version: 2,
+      version: 5,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -40,6 +40,13 @@ class DatabaseService {
   Future<void> _onCreate(Database db, int version) async {
     await db.transaction((txn) async {
       await txn.execute(Migrations.createCondominiums);
+      await txn.execute(Migrations.createTowers);
+      await txn.execute(Migrations.createUnits);
+      await txn.execute(Migrations.createUnitsTowerIndex);
+      await txn.execute(Migrations.createMeters);
+      await txn.execute(Migrations.createMetersUnitIndex);
+      await txn.execute(Migrations.createReadings);
+      await txn.execute(Migrations.createReadingsMeterIndex);
       await txn.execute(Migrations.createSyncQueue);
     });
   }
@@ -52,10 +59,29 @@ class DatabaseService {
     if (oldVersion < 2) {
       await db.transaction((txn) async {
         await _upgradeCondominiumsTable(txn);
-        await txn.execute(Migrations.createSyncQueue.replaceFirst(
-          'CREATE TABLE sync_queue',
-          'CREATE TABLE IF NOT EXISTS sync_queue',
-        ));
+        await txn.execute(Migrations.createSyncQueue);
+      });
+    }
+
+    if (oldVersion < 3) {
+      await db.transaction((txn) async {
+        await txn.execute(Migrations.createTowers);
+        await txn.execute(Migrations.createUnits);
+        await txn.execute(Migrations.createUnitsTowerIndex);
+      });
+    }
+
+    if (oldVersion < 4) {
+      await db.transaction((txn) async {
+        await txn.execute(Migrations.createMeters);
+        await txn.execute(Migrations.createMetersUnitIndex);
+      });
+    }
+
+    if (oldVersion < 5) {
+      await db.transaction((txn) async {
+        await txn.execute(Migrations.createReadings);
+        await txn.execute(Migrations.createReadingsMeterIndex);
       });
     }
   }

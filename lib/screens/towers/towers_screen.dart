@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../models/app_data.dart';
 import '../../models/tower.dart';
+import '../../repositories/local/local_unit_repository.dart';
+import '../units/units_screen.dart';
 
 class TowersScreen extends StatefulWidget {
   const TowersScreen({super.key, required this.condominium});
@@ -147,41 +149,66 @@ class _TowersScreenState extends State<TowersScreen> {
                     ),
                     trailing: PopupMenuButton<String>(
                       onSelected: (value) async {
-                        if (value == 'edit') {
-                          await showDialog<void>(
-                            context: context,
-                            builder: (_) => TowerDialog(
-                              condominiumId: widget.condominium.id,
-                              tower: tower,
-                            ),
-                          );
-                        }
-                        if (value == 'delete' && context.mounted) {
-                          final confirmed = await showDialog<bool>(
-                            context: context,
-                            builder: (dialogContext) => AlertDialog(
-                              title: const Text('Excluir torre'),
-                              content: Text('Deseja excluir “${tower.name}”?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(dialogContext, false),
-                                  child: const Text('Cancelar'),
-                                ),
-                                FilledButton(
-                                  onPressed: () =>
-                                      Navigator.pop(dialogContext, true),
-                                  child: const Text('Excluir'),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (confirmed == true && context.mounted) {
+                        switch (value) {
+                          case 'units':
+                            await Navigator.of(context).push<void>(
+                              MaterialPageRoute(
+                                builder: (_) => UnitsScreen(tower: tower),
+                              ),
+                            );
+                            return;
+
+                          case 'edit':
+                            await showDialog<void>(
+                              context: context,
+                              builder: (_) => TowerDialog(
+                                condominiumId: widget.condominium.id,
+                                tower: tower,
+                              ),
+                            );
+                            return;
+
+                          case 'delete':
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (dialogContext) => AlertDialog(
+                                title: const Text('Excluir torre'),
+                                content:
+                                    Text('Deseja excluir “${tower.name}”?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(dialogContext, false),
+                                    child: const Text('Cancelar'),
+                                  ),
+                                  FilledButton(
+                                    onPressed: () =>
+                                        Navigator.pop(dialogContext, true),
+                                    child: const Text('Excluir'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (!context.mounted || confirmed != true) return;
+
+                            await LocalUnitRepository().deleteTower(tower.id);
+
+                            if (!context.mounted) return;
+
                             context.read<AppData>().removeTower(tower.id);
-                          }
+                            return;
                         }
                       },
                       itemBuilder: (_) => const [
+                        PopupMenuItem(
+                          value: 'units',
+                          child: ListTile(
+                            leading: Icon(Icons.apartment_outlined),
+                            title: Text('Unidades'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
                         PopupMenuItem(
                           value: 'edit',
                           child: ListTile(
@@ -200,11 +227,9 @@ class _TowersScreenState extends State<TowersScreen> {
                         ),
                       ],
                     ),
-                    onTap: () => showDialog<void>(
-                      context: context,
-                      builder: (_) => TowerDialog(
-                        condominiumId: widget.condominium.id,
-                        tower: tower,
+                    onTap: () => Navigator.of(context).push<void>(
+                      MaterialPageRoute(
+                        builder: (_) => UnitsScreen(tower: tower),
                       ),
                     ),
                   ),
