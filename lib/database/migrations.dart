@@ -65,6 +65,8 @@ class Migrations {
       unit_id INTEGER NOT NULL,
       type TEXT NOT NULL CHECK(type IN ('water', 'gas')),
       serial_number TEXT NOT NULL COLLATE NOCASE UNIQUE,
+      manufacturer TEXT,
+      model TEXT,
       label TEXT,
       initial_reading REAL NOT NULL DEFAULT 0,
       integer_digits INTEGER NOT NULL DEFAULT 5,

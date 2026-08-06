@@ -22,10 +22,7 @@ class UnitFormScreen extends StatefulWidget {
 
 class _UnitFormScreenState extends State<UnitFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _number;
-  late final TextEditingController _floor;
-  late final TextEditingController _code;
-  late final TextEditingController _readingOrder;
+  late final TextEditingController _identifier;
   late final TextEditingController _notes;
   late bool _active;
   bool _saving = false;
@@ -33,25 +30,14 @@ class _UnitFormScreenState extends State<UnitFormScreen> {
   @override
   void initState() {
     super.initState();
-    final unit = widget.unit;
-    _number = TextEditingController(text: unit?.number ?? '');
-    _floor = TextEditingController(text: unit?.floor ?? '');
-    _code = TextEditingController(text: unit?.code ?? '');
-    _readingOrder = TextEditingController(
-      text: unit == null || unit.readingOrder == 0
-          ? ''
-          : unit.readingOrder.toString(),
-    );
-    _notes = TextEditingController(text: unit?.notes ?? '');
-    _active = unit?.active ?? true;
+    _identifier = TextEditingController(text: widget.unit?.number ?? '');
+    _notes = TextEditingController(text: widget.unit?.notes ?? '');
+    _active = widget.unit?.active ?? true;
   }
 
   @override
   void dispose() {
-    _number.dispose();
-    _floor.dispose();
-    _code.dispose();
-    _readingOrder.dispose();
+    _identifier.dispose();
     _notes.dispose();
     super.dispose();
   }
@@ -59,23 +45,23 @@ class _UnitFormScreenState extends State<UnitFormScreen> {
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _saving = true);
+
     final current = widget.unit;
     final now = DateTime.now();
     final unit = Unit(
       id: current?.id,
       towerId: widget.tower.id,
-      number: _number.text.trim(),
-      floor: _optional(_floor.text),
-      code: _optional(_code.text),
-      readingOrder: int.tryParse(_readingOrder.text.trim()) ?? 0,
+      number: _identifier.text.trim(),
       active: _active,
       notes: _optional(_notes.text),
       createdAt: current?.createdAt ?? now,
       updatedAt: current == null ? null : now,
     );
+
     final error = await context.read<UnitProvider>().save(unit);
     if (!mounted) return;
     setState(() => _saving = false);
+
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
       return;
@@ -106,54 +92,18 @@ class _UnitFormScreenState extends State<UnitFormScreen> {
                     child: ListTile(
                       leading: const Icon(Icons.domain_outlined),
                       title: Text(widget.tower.name),
-                      subtitle: const Text('A unidade será vinculada a esta torre.'),
+                      subtitle: const Text('A unidade ficará vinculada a esta torre.'),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
-                    controller: _number,
+                    controller: _identifier,
                     autofocus: !editing,
                     validator: UnitValidator.number,
-                    textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(
-                      labelText: 'Número da unidade *',
-                      hintText: 'Ex.: 101, 12A ou Loja 03',
+                      labelText: 'Identificador da unidade *',
+                      hintText: 'Ex.: 101, A-203, Cobertura 01 ou Loja 02',
                       prefixIcon: Icon(Icons.apartment_outlined),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _floor,
-                    validator: UnitValidator.floor,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'Andar',
-                      hintText: 'Ex.: 1º',
-                      prefixIcon: Icon(Icons.layers_outlined),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _code,
-                    validator: UnitValidator.code,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'Código interno',
-                      hintText: 'Opcional',
-                      prefixIcon: Icon(Icons.qr_code_outlined),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _readingOrder,
-                    validator: UnitValidator.readingOrder,
-                    keyboardType: TextInputType.number,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'Ordem de leitura',
-                      hintText: 'Ex.: 1, 2, 3...',
-                      helperText: 'Define a sequência da rota. Zero deixa por número.',
-                      prefixIcon: Icon(Icons.format_list_numbered),
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -171,7 +121,7 @@ class _UnitFormScreenState extends State<UnitFormScreen> {
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Unidade ativa'),
-                    subtitle: const Text('Unidades inativas continuam no histórico.'),
+                    subtitle: const Text('Unidades inativas permanecem no histórico.'),
                     value: _active,
                     onChanged: _saving ? null : (value) => setState(() => _active = value),
                   ),

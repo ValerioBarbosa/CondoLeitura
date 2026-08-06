@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../../models/app_data.dart';
 import '../../models/tower.dart';
-import '../../repositories/local/local_unit_repository.dart';
 import '../units/units_screen.dart';
 
 class TowersScreen extends StatefulWidget {
@@ -191,10 +190,6 @@ class _TowersScreenState extends State<TowersScreen> {
                             );
 
                             if (!context.mounted || confirmed != true) return;
-
-                            await LocalUnitRepository().deleteTower(tower.id);
-
-                            if (!context.mounted) return;
 
                             context.read<AppData>().removeTower(tower.id);
                             return;

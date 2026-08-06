@@ -40,24 +40,17 @@ class UnitDetailsScreen extends StatelessWidget {
                   CircleAvatar(
                     radius: 34,
                     child: Text(
-                      unit.number.isEmpty
-                          ? '?'
-                          : unit.number.substring(0, 1).toUpperCase(),
+                      unit.number.isEmpty ? '?' : unit.number.substring(0, 1).toUpperCase(),
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    'Unidade ${unit.number}',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
+                  Text(unit.number, style: Theme.of(context).textTheme.headlineSmall),
                   const SizedBox(height: 6),
                   Chip(
-                    avatar: Icon(
-                      unit.active
-                          ? Icons.check_circle_outline
-                          : Icons.pause_circle_outline,
-                    ),
+                    avatar: Icon(unit.active
+                        ? Icons.check_circle_outline
+                        : Icons.pause_circle_outline),
                     label: Text(unit.active ? 'Ativa' : 'Inativa'),
                   ),
                 ],
@@ -72,23 +65,6 @@ class UnitDetailsScreen extends StatelessWidget {
                   icon: Icons.domain_outlined,
                   label: 'Torre ou bloco',
                   value: tower.name,
-                ),
-                _DetailTile(
-                  icon: Icons.layers_outlined,
-                  label: 'Andar',
-                  value: unit.floor ?? 'Não informado',
-                ),
-                _DetailTile(
-                  icon: Icons.qr_code_outlined,
-                  label: 'Código interno',
-                  value: unit.code ?? 'Não informado',
-                ),
-                _DetailTile(
-                  icon: Icons.format_list_numbered,
-                  label: 'Ordem de leitura',
-                  value: unit.readingOrder == 0
-                      ? 'Ordenação automática'
-                      : unit.readingOrder.toString(),
                 ),
                 _DetailTile(
                   icon: Icons.notes_outlined,

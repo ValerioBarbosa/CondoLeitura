@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+import '../shared/theme/app_palette.dart';
 
-class AppColors {
-  static const success = Colors.green;
-  static const warning = Colors.orange;
-  static const danger = Colors.red;
-  static const synced = Colors.blue;
+abstract final class AppColors {
+  static const primary = AppPalette.primary;
+  static const success = AppPalette.success;
+  static const warning = AppPalette.warning;
+  static const danger = AppPalette.danger;
+  static const synced = AppPalette.primary;
+  static const background = AppPalette.background;
 }

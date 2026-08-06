@@ -6,7 +6,8 @@ import 'package:provider/provider.dart';
 import '../../models/tower.dart';
 import '../../models/unit.dart';
 import '../../providers/unit_provider.dart';
-import '../../repositories/local/local_unit_repository.dart';
+import '../../models/app_data.dart';
+import '../../repositories/local/app_data_unit_repository.dart';
 import '../../widgets/unit_card.dart';
 import 'unit_details_screen.dart';
 import 'unit_form_screen.dart';
@@ -21,20 +22,24 @@ class UnitsScreen extends StatefulWidget {
 }
 
 class _UnitsScreenState extends State<UnitsScreen> {
-  late final UnitProvider _provider;
+  UnitProvider? _provider;
   Timer? _searchDebounce;
 
   @override
-  void initState() {
-    super.initState();
-    _provider = UnitProvider(repository: LocalUnitRepository());
-    _provider.initialize(widget.tower);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_provider != null) return;
+    final provider = UnitProvider(
+      repository: AppDataUnitRepository(context.read<AppData>()),
+    );
+    _provider = provider;
+    provider.initialize(widget.tower);
   }
 
   @override
   void dispose() {
     _searchDebounce?.cancel();
-    _provider.dispose();
+    _provider?.dispose();
     super.dispose();
   }
 
@@ -42,7 +47,7 @@ class _UnitsScreenState extends State<UnitsScreen> {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(
       const Duration(milliseconds: 350),
-      () => _provider.setSearch(value),
+      () => _provider?.setSearch(value),
     );
   }
 
@@ -50,7 +55,7 @@ class _UnitsScreenState extends State<UnitsScreen> {
     await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => ChangeNotifierProvider.value(
-          value: _provider,
+          value: _provider!,
           child: UnitFormScreen(tower: widget.tower, unit: unit),
         ),
       ),
@@ -93,7 +98,7 @@ class _UnitsScreenState extends State<UnitsScreen> {
       ),
     );
     if (confirmed != true) return;
-    final error = await _provider.delete(unit);
+    final error = await _provider!.delete(unit);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -105,7 +110,7 @@ class _UnitsScreenState extends State<UnitsScreen> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
-      value: _provider,
+      value: _provider!,
       child: Scaffold(
         appBar: AppBar(
           title: Column(
@@ -135,7 +140,7 @@ class _UnitsScreenState extends State<UnitsScreen> {
                   TextField(
                     decoration: const InputDecoration(
                       prefixIcon: Icon(Icons.search),
-                      hintText: 'Pesquisar por unidade, código ou andar',
+                      hintText: 'Pesquisar por identificador ou observação',
                     ),
                     onChanged: _onSearch,
                   ),

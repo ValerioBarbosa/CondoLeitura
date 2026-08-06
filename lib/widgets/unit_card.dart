@@ -18,12 +18,6 @@ class UnitCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final details = <String>[
-      if (unit.floor?.trim().isNotEmpty ?? false) 'Andar ${unit.floor}',
-      if (unit.code?.trim().isNotEmpty ?? false) 'Código ${unit.code}',
-      if (unit.readingOrder > 0) 'Ordem ${unit.readingOrder}',
-    ];
-
     return Card(
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -36,7 +30,7 @@ class UnitCard extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Unidade ${unit.number}',
+                unit.number,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
@@ -50,15 +44,12 @@ class UnitCard extends StatelessWidget {
             ),
           ],
         ),
-        subtitle: details.isEmpty
-            ? const Padding(
-                padding: EdgeInsets.only(top: 4),
-                child: Text('Sem informações adicionais'),
-              )
-            : Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(details.join(' • ')),
-              ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(unit.notes?.trim().isNotEmpty == true
+              ? unit.notes!
+              : 'Sem observações'),
+        ),
         trailing: PopupMenuButton<String>(
           onSelected: (value) {
             if (value == 'edit') onEdit();

@@ -49,6 +49,36 @@ class Unit {
     );
   }
 
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'towerId': towerId,
+        'number': number,
+        'floor': floor,
+        'code': code,
+        'readingOrder': readingOrder,
+        'active': active,
+        'notes': notes,
+        'createdAt': createdAt.toIso8601String(),
+        'updatedAt': updatedAt?.toIso8601String(),
+      };
+
+  factory Unit.fromJson(Map<String, dynamic> json) {
+    final now = DateTime.now();
+    return Unit(
+      id: (json['id'] as num?)?.toInt(),
+      towerId: json['towerId'] as String,
+      number: json['number'] as String,
+      floor: json['floor'] as String?,
+      code: json['code'] as String?,
+      readingOrder: (json['readingOrder'] as num?)?.toInt() ?? 0,
+      active: json['active'] as bool? ?? true,
+      notes: json['notes'] as String?,
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? now,
+      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? ''),
+    );
+  }
+
   Map<String, dynamic> toMap() => {
         'id': id,
         'tower_id': towerId,

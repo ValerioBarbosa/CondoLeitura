@@ -28,7 +28,7 @@ class DatabaseService {
 
     return openDatabase(
       path,
-      version: 5,
+      version: 6,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -82,6 +82,22 @@ class DatabaseService {
       await db.transaction((txn) async {
         await txn.execute(Migrations.createReadings);
         await txn.execute(Migrations.createReadingsMeterIndex);
+      });
+    }
+
+    if (oldVersion < 6) {
+      await db.transaction((txn) async {
+        final columns = await txn.rawQuery('PRAGMA table_info(meters)');
+        final names = columns
+            .map((column) => column['name'] as String?)
+            .whereType<String>()
+            .toSet();
+        if (!names.contains('manufacturer')) {
+          await txn.execute('ALTER TABLE meters ADD COLUMN manufacturer TEXT');
+        }
+        if (!names.contains('model')) {
+          await txn.execute('ALTER TABLE meters ADD COLUMN model TEXT');
+        }
       });
     }
   }

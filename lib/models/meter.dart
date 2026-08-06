@@ -23,6 +23,8 @@ class Meter {
     required this.unitId,
     required this.type,
     required this.serialNumber,
+    this.manufacturer,
+    this.model,
     this.label,
     this.initialReading = 0,
     this.integerDigits = 5,
@@ -38,6 +40,8 @@ class Meter {
   final int unitId;
   final MeterType type;
   final String serialNumber;
+  final String? manufacturer;
+  final String? model;
   final String? label;
   final double initialReading;
   final int integerDigits;
@@ -55,6 +59,8 @@ class Meter {
     int? unitId,
     MeterType? type,
     String? serialNumber,
+    String? manufacturer,
+    String? model,
     String? label,
     double? initialReading,
     int? integerDigits,
@@ -70,6 +76,8 @@ class Meter {
       unitId: unitId ?? this.unitId,
       type: type ?? this.type,
       serialNumber: serialNumber ?? this.serialNumber,
+      manufacturer: manufacturer ?? this.manufacturer,
+      model: model ?? this.model,
       label: label ?? this.label,
       initialReading: initialReading ?? this.initialReading,
       integerDigits: integerDigits ?? this.integerDigits,
@@ -87,6 +95,8 @@ class Meter {
         'unit_id': unitId,
         'type': type.databaseValue,
         'serial_number': serialNumber.trim(),
+        'manufacturer': _nullIfEmpty(manufacturer),
+        'model': _nullIfEmpty(model),
         'label': _nullIfEmpty(label),
         'initial_reading': initialReading,
         'integer_digits': integerDigits,
@@ -98,11 +108,31 @@ class Meter {
         'updated_at': updatedAt?.toIso8601String(),
       };
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'unitId': unitId,
+        'type': type.name,
+        'serialNumber': serialNumber,
+        'manufacturer': manufacturer,
+        'model': model,
+        'label': label,
+        'initialReading': initialReading,
+        'integerDigits': integerDigits,
+        'decimalDigits': decimalDigits,
+        'active': active,
+        'installedAt': installedAt?.toIso8601String(),
+        'notes': notes,
+        'createdAt': createdAt.toIso8601String(),
+        'updatedAt': updatedAt?.toIso8601String(),
+      };
+
   factory Meter.fromMap(Map<String, Object?> map) => Meter(
         id: map['id'] as int?,
         unitId: map['unit_id'] as int,
         type: MeterType.fromDatabase(map['type'] as String? ?? 'water'),
         serialNumber: map['serial_number'] as String,
+        manufacturer: map['manufacturer'] as String?,
+        model: map['model'] as String?,
         label: map['label'] as String?,
         initialReading: (map['initial_reading'] as num? ?? 0).toDouble(),
         integerDigits: map['integer_digits'] as int? ?? 5,
@@ -116,6 +146,28 @@ class Meter {
         updatedAt: map['updated_at'] == null
             ? null
             : DateTime.tryParse(map['updated_at'] as String),
+      );
+
+  factory Meter.fromJson(Map<String, dynamic> json) => Meter(
+        id: json['id'] as int?,
+        unitId: json['unitId'] as int,
+        type: MeterType.fromDatabase(json['type'] as String? ?? 'water'),
+        serialNumber: json['serialNumber'] as String,
+        manufacturer: json['manufacturer'] as String?,
+        model: json['model'] as String?,
+        label: json['label'] as String?,
+        initialReading: (json['initialReading'] as num? ?? 0).toDouble(),
+        integerDigits: json['integerDigits'] as int? ?? 5,
+        decimalDigits: json['decimalDigits'] as int? ?? 3,
+        active: json['active'] as bool? ?? true,
+        installedAt: json['installedAt'] == null
+            ? null
+            : DateTime.tryParse(json['installedAt'] as String),
+        notes: json['notes'] as String?,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        updatedAt: json['updatedAt'] == null
+            ? null
+            : DateTime.tryParse(json['updatedAt'] as String),
       );
 
   static String? _nullIfEmpty(String? value) {
