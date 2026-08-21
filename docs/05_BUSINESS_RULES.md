@@ -16,3 +16,9 @@
 14. Medidor inativo não entra na rota de leitura, mas permanece cadastrado.
 15. Ao excluir uma unidade, seus medidores são excluídos.
 16. Quantidade de hidrômetros do condomínio/torre/unidade será calculada a partir dos medidores cadastrados.
+17. Toda leitura deve pertencer a um medidor existente.
+18. A leitura anterior nunca é digitada: é sempre a última leitura registrada do mesmo medidor (zero, se for a primeira).
+19. A leitura atual não pode ser menor que a leitura anterior.
+20. Consumo é sempre calculado (atual − anterior), nunca armazenado.
+21. Ao excluir um medidor, seu histórico de leituras é excluído junto.
+22. Histórico de leituras de um medidor deve ficar acessível a partir do próprio medidor.

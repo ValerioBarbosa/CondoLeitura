@@ -10,6 +10,6 @@
 - [x] Hidrômetros.
 
 ## Release 0.3
-- [ ] Leituras manuais.
-- [ ] Histórico.
+- [x] Leituras manuais.
+- [x] Histórico.
 - [ ] OCR.

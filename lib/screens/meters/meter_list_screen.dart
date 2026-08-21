@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/app_data.dart';
 import '../../models/meter.dart';
 import '../../models/unit.dart';
+import '../history/meter_history_screen.dart';
 
 class MetersScreen extends StatefulWidget {
   const MetersScreen({super.key, required this.unit});
@@ -104,9 +105,10 @@ class _MetersScreenState extends State<MetersScreen> {
                     subtitle: Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
-                        meter.serialNumber.isEmpty
-                            ? 'Sem número de série'
-                            : 'Série ${meter.serialNumber}',
+                        [
+                          meter.serialNumber.isEmpty ? 'Sem número de série' : 'Série ${meter.serialNumber}',
+                          '${data.readingsForMeter(meter.id).length} leitura(s)',
+                        ].join(' • '),
                       ),
                     ),
                     trailing: PopupMenuButton<String>(
@@ -162,11 +164,10 @@ class _MetersScreenState extends State<MetersScreen> {
                         ),
                       ],
                     ),
-                    onTap: () => showDialog<void>(
-                      context: context,
-                      builder: (_) => MeterDialog(
-                        unitId: widget.unit.id,
-                        meter: meter,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MeterHistoryScreen(meter: meter),
                       ),
                     ),
                   ),
