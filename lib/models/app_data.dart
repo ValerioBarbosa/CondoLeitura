@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'meter.dart';
 import 'tower.dart';
+import 'unit.dart';
 
 class CondoItem {
   CondoItem({required this.id, required this.name, required this.city, required this.towers, required this.units});
@@ -58,13 +60,19 @@ class AppData extends ChangeNotifier {
   static const _condosKey = 'mvp_condominiums';
   static const _readingsKey = 'mvp_readings';
   static const _towersKey = 'mvp_towers';
+  static const _unitsKey = 'mvp_units';
+  static const _metersKey = 'mvp_meters';
   final List<CondoItem> _condominiums = [];
   final List<MeterReadingItem> _readings = [];
   final List<Tower> _towers = [];
+  final List<Unit> _units = [];
+  final List<Meter> _meters = [];
 
   List<CondoItem> get condominiums => List.unmodifiable(_condominiums);
   List<MeterReadingItem> get readings => List.unmodifiable(_readings.reversed);
   List<Tower> get towers => List.unmodifiable(_towers);
+  List<Unit> get units => List.unmodifiable(_units);
+  List<Meter> get meters => List.unmodifiable(_meters);
 
   List<Tower> towersFor(String condominiumId) {
     final result = _towers.where((item) => item.condominiumId == condominiumId).toList();
@@ -75,26 +83,66 @@ class AppData extends ChangeNotifier {
   int towerCountFor(String condominiumId) =>
       _towers.where((item) => item.condominiumId == condominiumId).length;
 
-  int unitCountFor(String condominiumId) {
-    for (final condominium in _condominiums) {
-      if (condominium.id == condominiumId) return condominium.units;
-    }
-    return 0;
+  List<Unit> unitsFor(String towerId) {
+    final result = _units.where((item) => item.towerId == towerId).toList();
+    result.sort((a, b) => a.number.toLowerCase().compareTo(b.number.toLowerCase()));
+    return List.unmodifiable(result);
   }
-  int get totalUnits => _condominiums.fold(0, (sum, item) => sum + item.units);
+
+  int unitCountForTower(String towerId) =>
+      _units.where((item) => item.towerId == towerId).length;
+
+  int unitCountFor(String condominiumId) {
+    final towerIds = _towers
+        .where((tower) => tower.condominiumId == condominiumId)
+        .map((tower) => tower.id)
+        .toSet();
+    return _units.where((unit) => towerIds.contains(unit.towerId)).length;
+  }
+
+  List<Meter> metersFor(String unitId) {
+    final result = _meters.where((item) => item.unitId == unitId).toList();
+    result.sort((a, b) => a.type.compareTo(b.type));
+    return List.unmodifiable(result);
+  }
+
+  int meterCountForUnit(String unitId) =>
+      _meters.where((item) => item.unitId == unitId).length;
+
+  int meterCountForCondominium(String condominiumId) {
+    final towerIds = _towers
+        .where((tower) => tower.condominiumId == condominiumId)
+        .map((tower) => tower.id)
+        .toSet();
+    final unitIds = _units
+        .where((unit) => towerIds.contains(unit.towerId))
+        .map((unit) => unit.id)
+        .toSet();
+    return _meters.where((meter) => unitIds.contains(meter.unitId)).length;
+  }
+
+  int get totalUnits => _units.length;
   double get totalConsumption => _readings.fold(0, (sum, item) => sum + item.consumption);
 
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
     try {
+      final prefs = await SharedPreferences.getInstance();
       final condoRaw = prefs.getString(_condosKey);
       final readingRaw = prefs.getString(_readingsKey);
       final towerRaw = prefs.getString(_towersKey);
+      final unitRaw = prefs.getString(_unitsKey);
+      final meterRaw = prefs.getString(_metersKey);
       if (condoRaw != null) {
         _condominiums.addAll((jsonDecode(condoRaw) as List).map((e) => CondoItem.fromJson(Map<String, dynamic>.from(e as Map))));
       }
       if (towerRaw != null) {
         _towers.addAll((jsonDecode(towerRaw) as List).map((e) => Tower.fromJson(Map<String, dynamic>.from(e as Map))));
+      }
+      if (unitRaw != null) {
+        _units.addAll((jsonDecode(unitRaw) as List).map((e) => Unit.fromJson(Map<String, dynamic>.from(e as Map))));
+      }
+      if (meterRaw != null) {
+        _meters.addAll((jsonDecode(meterRaw) as List).map((e) => Meter.fromJson(Map<String, dynamic>.from(e as Map))));
       }
       if (readingRaw != null) {
         _readings.addAll((jsonDecode(readingRaw) as List).map((e) => MeterReadingItem.fromJson(Map<String, dynamic>.from(e as Map))));
@@ -103,6 +151,8 @@ class AppData extends ChangeNotifier {
       _condominiums.clear();
       _readings.clear();
       _towers.clear();
+      _units.clear();
+      _meters.clear();
     }
     if (_condominiums.isEmpty) {
       _condominiums.add(CondoItem(id: '1', name: 'Condomínio de Demonstração', city: 'Porto Alegre', towers: 4, units: 96));
@@ -115,6 +165,8 @@ class AppData extends ChangeNotifier {
     await prefs.setString(_condosKey, jsonEncode(_condominiums.map((e) => e.toJson()).toList()));
     await prefs.setString(_readingsKey, jsonEncode(_readings.map((e) => e.toJson()).toList()));
     await prefs.setString(_towersKey, jsonEncode(_towers.map((e) => e.toJson()).toList()));
+    await prefs.setString(_unitsKey, jsonEncode(_units.map((e) => e.toJson()).toList()));
+    await prefs.setString(_metersKey, jsonEncode(_meters.map((e) => e.toJson()).toList()));
   }
 
   void addCondominium({required String name, required String city, required int towers, required int units}) {
@@ -124,8 +176,12 @@ class AppData extends ChangeNotifier {
   }
 
   void removeCondominium(String id) {
+    final towerIds = _towers.where((tower) => tower.condominiumId == id).map((tower) => tower.id).toSet();
+    final unitIds = _units.where((unit) => towerIds.contains(unit.towerId)).map((unit) => unit.id).toSet();
     _condominiums.removeWhere((item) => item.id == id);
     _towers.removeWhere((item) => item.condominiumId == id);
+    _units.removeWhere((item) => towerIds.contains(item.towerId));
+    _meters.removeWhere((item) => unitIds.contains(item.unitId));
     notifyListeners();
     _save();
   }
@@ -161,7 +217,83 @@ class AppData extends ChangeNotifier {
   }
 
   void removeTower(String id) {
+    final unitIds = _units.where((unit) => unit.towerId == id).map((unit) => unit.id).toSet();
     _towers.removeWhere((item) => item.id == id);
+    _units.removeWhere((item) => item.towerId == id);
+    _meters.removeWhere((item) => unitIds.contains(item.unitId));
+    notifyListeners();
+    _save();
+  }
+
+  void addUnit({
+    required String towerId,
+    required String number,
+    String floor = '',
+    String code = '',
+    String notes = '',
+    bool isActive = true,
+  }) {
+    _units.add(Unit(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      towerId: towerId,
+      number: number,
+      floor: floor,
+      code: code,
+      notes: notes,
+      isActive: isActive,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ));
+    notifyListeners();
+    _save();
+  }
+
+  void updateUnit(Unit updated) {
+    final index = _units.indexWhere((item) => item.id == updated.id);
+    if (index < 0) return;
+    _units[index] = updated;
+    notifyListeners();
+    _save();
+  }
+
+  void removeUnit(String id) {
+    _units.removeWhere((item) => item.id == id);
+    _meters.removeWhere((item) => item.unitId == id);
+    notifyListeners();
+    _save();
+  }
+
+  void addMeter({
+    required String unitId,
+    required String type,
+    String serialNumber = '',
+    String notes = '',
+    bool isActive = true,
+  }) {
+    _meters.add(Meter(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      unitId: unitId,
+      type: type,
+      serialNumber: serialNumber,
+      notes: notes,
+      isActive: isActive,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ));
+    notifyListeners();
+    _save();
+  }
+
+  void updateMeter(Meter updated) {
+    final index = _meters.indexWhere((item) => item.id == updated.id);
+    if (index < 0) return;
+    _meters[index] = updated;
+    notifyListeners();
+    _save();
+  }
+
+  void removeMeter(String id) {
+    _meters.removeWhere((item) => item.id == id);
     notifyListeners();
     _save();
   }

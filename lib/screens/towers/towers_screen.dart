@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../models/app_data.dart';
 import '../../models/tower.dart';
+import '../units/units_screen.dart';
 
 class TowersScreen extends StatefulWidget {
   const TowersScreen({super.key, required this.condominium});
@@ -43,6 +44,7 @@ class _TowersScreenState extends State<TowersScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'towers-fab',
         onPressed: () => showDialog<void>(
           context: context,
           builder: (_) => TowerDialog(condominiumId: widget.condominium.id),
@@ -141,9 +143,10 @@ class _TowersScreenState extends State<TowersScreen> {
                     subtitle: Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
-                        tower.code.isEmpty
-                            ? 'Sem código'
-                            : 'Código ${tower.code}',
+                        [
+                          tower.code.isEmpty ? 'Sem código' : 'Código ${tower.code}',
+                          '${data.unitCountForTower(tower.id)} unidade(s)',
+                        ].join(' • '),
                       ),
                     ),
                     trailing: PopupMenuButton<String>(
@@ -199,11 +202,10 @@ class _TowersScreenState extends State<TowersScreen> {
                         ),
                       ],
                     ),
-                    onTap: () => showDialog<void>(
-                      context: context,
-                      builder: (_) => TowerDialog(
-                        condominiumId: widget.condominium.id,
-                        tower: tower,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => UnitsScreen(tower: tower),
                       ),
                     ),
                   ),

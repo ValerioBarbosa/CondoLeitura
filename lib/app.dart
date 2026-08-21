@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'config/app_theme.dart';
-import 'config/routes.dart';
 import 'models/app_data.dart';
 import 'screens/home/home_screen.dart';
 
@@ -24,7 +23,6 @@ class CondoLeituraApp extends StatelessWidget {
         darkTheme: AppTheme.dark,
         themeMode: ThemeMode.system,
         home: const HomeScreen(),
-        routes: AppRoutes.routes,
         builder: (context, child) {
           return GestureDetector(
             behavior: HitTestBehavior.translucent,
