@@ -12,4 +12,5 @@
 ## Release 0.3
 - [x] Leituras manuais.
 - [x] Histórico.
-- [ ] OCR.
+- [x] Captura de foto do medidor (Web, Android e iOS).
+- [ ] OCR (reconhecimento automático do valor a partir da foto). Só roda em Android/iOS nativo; `google_mlkit_text_recognition` não tem suporte a Web.

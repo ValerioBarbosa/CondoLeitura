@@ -20,6 +20,27 @@ void main() {
     expect(decoded.createdAt, reading.createdAt);
   });
 
+  test('Reading round-trips photoBase64, and defaults to null when absent', () {
+    final withPhoto = Reading(
+      id: 'reading-1',
+      meterId: 'meter-1',
+      previousValue: 0,
+      currentValue: 10,
+      createdAt: DateTime.utc(2026, 1, 1),
+      photoBase64: 'ZmFrZS1ieXRlcw==',
+    );
+    expect(Reading.fromJson(withPhoto.toJson()).photoBase64, 'ZmFrZS1ieXRlcw==');
+
+    final withoutPhoto = Reading.fromJson({
+      'id': 'reading-2',
+      'meterId': 'meter-1',
+      'previousValue': 0,
+      'currentValue': 10,
+      'createdAt': DateTime.utc(2026, 1, 1).toIso8601String(),
+    });
+    expect(withoutPhoto.photoBase64, isNull);
+  });
+
   test('consumption is currentValue minus previousValue', () {
     final reading = Reading(
       id: 'reading-1',

@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/app_data.dart';
 import '../../models/meter.dart';
+import '../../widgets/photo_capture_field.dart';
 
 class MeterHistoryScreen extends StatelessWidget {
   const MeterHistoryScreen({super.key, required this.meter});
@@ -130,9 +133,21 @@ class MeterHistoryScreen extends StatelessWidget {
                   child: Card(
                     child: ListTile(
                       contentPadding: const EdgeInsets.all(16),
-                      leading: CircleAvatar(
-                        child: Icon(water ? Icons.water_drop_outlined : Icons.local_fire_department_outlined),
-                      ),
+                      leading: reading.photoBase64 == null
+                          ? CircleAvatar(
+                              child: Icon(water ? Icons.water_drop_outlined : Icons.local_fire_department_outlined),
+                            )
+                          : GestureDetector(
+                              onTap: () => showDialog<void>(
+                                context: context,
+                                builder: (_) => Dialog(
+                                  child: Image.memory(base64Decode(reading.photoBase64!)),
+                                ),
+                              ),
+                              child: CircleAvatar(
+                                backgroundImage: MemoryImage(base64Decode(reading.photoBase64!)),
+                              ),
+                            ),
                       title: Text(
                         DateFormat('dd/MM/yyyy HH:mm').format(reading.createdAt),
                         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -166,6 +181,7 @@ class _NewReadingDialog extends StatefulWidget {
 class _NewReadingDialogState extends State<_NewReadingDialog> {
   final _formKey = GlobalKey<FormState>();
   final _current = TextEditingController();
+  String? _photoBase64;
 
   @override
   void dispose() {
@@ -202,6 +218,8 @@ class _NewReadingDialogState extends State<_NewReadingDialog> {
                 decoration: const InputDecoration(labelText: 'Leitura atual *'),
                 validator: _numberValidator,
               ),
+              const SizedBox(height: 12),
+              PhotoCaptureField(onChanged: (value) => setState(() => _photoBase64 = value)),
             ],
           ),
         ),
@@ -221,7 +239,11 @@ class _NewReadingDialogState extends State<_NewReadingDialog> {
               );
               return;
             }
-            context.read<AppData>().addReading(meterId: widget.meter.id, currentValue: current);
+            context.read<AppData>().addReading(
+                  meterId: widget.meter.id,
+                  currentValue: current,
+                  photoBase64: _photoBase64,
+                );
             Navigator.pop(context);
           },
           child: const Text('Salvar'),

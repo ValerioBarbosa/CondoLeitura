@@ -43,5 +43,8 @@ Uma unidade pode ter mais de um medidor (tipicamente um de água e um de gás).
 - previousValue
 - currentValue
 - createdAt
+- photoBase64 (opcional)
 
 `previousValue` nunca é digitado pelo usuário: é sempre a `currentValue` da última leitura do mesmo medidor (ou zero, se for a primeira leitura). Consumo é sempre calculado (`currentValue - previousValue`), nunca armazenado.
+
+`photoBase64` guarda a foto do medidor em bytes (base64), não um caminho de arquivo: no Web não existe um caminho de arquivo persistente entre sessões, então bytes é a única representação que funciona igual em Web, Android e iOS. Isso é aceitável no estágio atual do MVP (poucas leituras, armazenamento local); deve ser revisado quando a sincronização com um backend real for implementada (Supabase Storage, por exemplo), para não inchar o armazenamento local com imagens grandes.

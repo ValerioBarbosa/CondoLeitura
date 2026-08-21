@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +9,7 @@ import '../../models/meter.dart';
 import '../../models/reading.dart';
 import '../../models/tower.dart';
 import '../../models/unit.dart';
+import '../../widgets/photo_capture_field.dart';
 import '../condominiums/condominium_dashboard_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -407,6 +410,7 @@ class _ReadingDialogState extends State<ReadingDialog> {
   String? _towerId;
   String? _unitId;
   String? _meterId;
+  String? _photoBase64;
 
   @override
   void dispose() {
@@ -515,6 +519,8 @@ class _ReadingDialogState extends State<ReadingDialog> {
                   ),
                 ),
               ]),
+              const SizedBox(height: 12),
+              PhotoCaptureField(onChanged: (value) => setState(() => _photoBase64 = value)),
             ]),
           ),
         ),
@@ -531,7 +537,11 @@ class _ReadingDialogState extends State<ReadingDialog> {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A leitura atual não pode ser menor que a anterior.')));
                     return;
                   }
-                  context.read<AppData>().addReading(meterId: _meterId!, currentValue: current);
+                  context.read<AppData>().addReading(
+                        meterId: _meterId!,
+                        currentValue: current,
+                        photoBase64: _photoBase64,
+                      );
                   Navigator.pop(context);
                 },
           child: const Text('Salvar leitura'),
@@ -553,7 +563,9 @@ class ReadingTile extends StatelessWidget {
     return Card(
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        leading: CircleAvatar(child: Icon(water ? Icons.water_drop_outlined : Icons.local_fire_department_outlined)),
+        leading: item.photoBase64 == null
+            ? CircleAvatar(child: Icon(water ? Icons.water_drop_outlined : Icons.local_fire_department_outlined))
+            : CircleAvatar(backgroundImage: MemoryImage(base64Decode(item.photoBase64!))),
         title: Text(data.meterLabel(item.meterId), style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(DateFormat('dd/MM/yyyy HH:mm').format(item.createdAt)),
         trailing: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [
