@@ -1,4 +1,21 @@
-# Arquitetura do CondoLeitura
+# Arquitetura do CondoLeitura (documento desatualizado)
+
+> **Este documento descreve uma arquitetura aspiracional (SQLite + Supabase em
+> camadas) que não corresponde ao estado atual do projeto.** A decisão
+> documentada e vigente está em `docs/03_ARCHITECTURE.md`: o app roda hoje em
+> `UI → AppData (ChangeNotifier) → SharedPreferences`, e o banco definitivo /
+> os repositórios serão integrados **gradualmente, por módulo**, conforme o
+> roadmap em `docs/02_ROADMAP.md` avança — não de uma vez, como este
+> documento sugere. O código que existia aqui como tentativa isolada desse
+> desenho (models, repositórios e provider de Condomínio em SQLite, stack de
+> sync, etc.) foi removido por estar desconectado da UI e sem testes reais;
+> ele continua disponível no histórico do git caso sirva de referência
+> quando cada módulo for implementado de verdade.
+>
+> Mantenha este arquivo como referência de longo prazo para as decisões de
+> segurança e sincronização (RLS, idempotency_key, etc.), mas trate
+> `docs/00_VISION.md` a `docs/06_DESIGN_SYSTEM.md`, `docs/decisions/` e
+> `docs/sprints/` como a fonte de verdade sobre o que existe hoje.
 
 ## Visão geral
 
