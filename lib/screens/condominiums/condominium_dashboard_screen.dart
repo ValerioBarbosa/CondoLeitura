@@ -64,7 +64,7 @@ class CondominiumDashboardScreen extends StatelessWidget {
                 width: cardWidth,
                 icon: Icons.water_drop_outlined,
                 label: 'Hidrômetros',
-                value: '0',
+                value: '${data.meterCountForCondominium(condominium.id)}',
               ),
               _MetricCard(
                 width: cardWidth,
@@ -88,7 +88,7 @@ class CondominiumDashboardScreen extends StatelessWidget {
             title: 'Torres e blocos',
             subtitle: towerCount == 0
                 ? 'Cadastre a primeira torre deste condomínio.'
-                : '$towerCount cadastrada(s)',
+                : '$towerCount torre(s) • $unitCount unidade(s). Abra uma torre para gerenciar unidades e hidrômetros.',
             enabled: true,
             onTap: () => Navigator.push(
               context,
@@ -96,20 +96,6 @@ class CondominiumDashboardScreen extends StatelessWidget {
                 builder: (_) => TowersScreen(condominium: condominium),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          const _ModuleCard(
-            icon: Icons.home_work_outlined,
-            title: 'Apartamentos e unidades',
-            subtitle: 'Disponível na próxima etapa.',
-            enabled: false,
-          ),
-          const SizedBox(height: 12),
-          const _ModuleCard(
-            icon: Icons.water_drop_outlined,
-            title: 'Hidrômetros',
-            subtitle: 'Disponível após o módulo de unidades.',
-            enabled: false,
           ),
           const SizedBox(height: 12),
           const _ModuleCard(

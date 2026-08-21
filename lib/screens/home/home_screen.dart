@@ -203,6 +203,7 @@ class CondominiumsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'condominiums-fab',
         onPressed: () => showDialog(context: context, builder: (_) => const CondominiumDialog()),
         icon: const Icon(Icons.add),
         label: const Text('Novo condomínio'),
@@ -342,6 +343,7 @@ class ReadingsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'readings-fab',
         onPressed: data.condominiums.isEmpty ? null : () => showDialog(context: context, builder: (_) => const ReadingDialog()),
         icon: const Icon(Icons.add_a_photo_outlined),
         label: const Text('Registrar leitura'),
