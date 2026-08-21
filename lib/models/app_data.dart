@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'meter.dart';
+import 'reading.dart';
 import 'tower.dart';
 import 'unit.dart';
 
@@ -25,37 +26,6 @@ class CondoItem {
       );
 }
 
-class MeterReadingItem {
-  MeterReadingItem({required this.id, required this.condominium, required this.unit, required this.meterType, required this.previousValue, required this.currentValue, required this.createdAt});
-  final String id;
-  final String condominium;
-  final String unit;
-  final String meterType;
-  final double previousValue;
-  final double currentValue;
-  final DateTime createdAt;
-  double get consumption => currentValue - previousValue;
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'condominium': condominium,
-        'unit': unit,
-        'meterType': meterType,
-        'previousValue': previousValue,
-        'currentValue': currentValue,
-        'createdAt': createdAt.toIso8601String(),
-      };
-  factory MeterReadingItem.fromJson(Map<String, dynamic> json) => MeterReadingItem(
-        id: json['id'] as String,
-        condominium: json['condominium'] as String,
-        unit: json['unit'] as String,
-        meterType: json['meterType'] as String,
-        previousValue: (json['previousValue'] as num).toDouble(),
-        currentValue: (json['currentValue'] as num).toDouble(),
-        createdAt: DateTime.parse(json['createdAt'] as String),
-      );
-}
-
 class AppData extends ChangeNotifier {
   static const _condosKey = 'mvp_condominiums';
   static const _readingsKey = 'mvp_readings';
@@ -63,13 +33,13 @@ class AppData extends ChangeNotifier {
   static const _unitsKey = 'mvp_units';
   static const _metersKey = 'mvp_meters';
   final List<CondoItem> _condominiums = [];
-  final List<MeterReadingItem> _readings = [];
+  final List<Reading> _readings = [];
   final List<Tower> _towers = [];
   final List<Unit> _units = [];
   final List<Meter> _meters = [];
 
   List<CondoItem> get condominiums => List.unmodifiable(_condominiums);
-  List<MeterReadingItem> get readings => List.unmodifiable(_readings.reversed);
+  List<Reading> get readings => List.unmodifiable(_readings.reversed);
   List<Tower> get towers => List.unmodifiable(_towers);
   List<Unit> get units => List.unmodifiable(_units);
   List<Meter> get meters => List.unmodifiable(_meters);
@@ -124,6 +94,61 @@ class AppData extends ChangeNotifier {
   int get totalUnits => _units.length;
   double get totalConsumption => _readings.fold(0, (sum, item) => sum + item.consumption);
 
+  CondoItem? condominiumById(String id) {
+    for (final item in _condominiums) {
+      if (item.id == id) return item;
+    }
+    return null;
+  }
+
+  Tower? towerById(String id) {
+    for (final item in _towers) {
+      if (item.id == id) return item;
+    }
+    return null;
+  }
+
+  Unit? unitById(String id) {
+    for (final item in _units) {
+      if (item.id == id) return item;
+    }
+    return null;
+  }
+
+  Meter? meterById(String id) {
+    for (final item in _meters) {
+      if (item.id == id) return item;
+    }
+    return null;
+  }
+
+  /// Descreve um medidor pela hierarquia completa, ex.: "Condomínio X • Torre A • 101 • Água".
+  String meterLabel(String meterId) {
+    final meter = meterById(meterId);
+    if (meter == null) return 'Medidor removido';
+    final unit = unitById(meter.unitId);
+    final tower = unit == null ? null : towerById(unit.towerId);
+    final condominium = tower == null ? null : condominiumById(tower.condominiumId);
+    final parts = [
+      if (condominium != null) condominium.name,
+      if (tower != null) tower.name,
+      if (unit != null) 'Unidade ${unit.number}',
+      meter.type,
+    ];
+    return parts.join(' • ');
+  }
+
+  List<Reading> readingsForMeter(String meterId) {
+    final result = _readings.where((item) => item.meterId == meterId).toList();
+    result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return List.unmodifiable(result);
+  }
+
+  Reading? lastReadingFor(String meterId) {
+    final history = readingsForMeter(meterId);
+    return history.isEmpty ? null : history.first;
+  }
+
   Future<void> load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -145,7 +170,7 @@ class AppData extends ChangeNotifier {
         _meters.addAll((jsonDecode(meterRaw) as List).map((e) => Meter.fromJson(Map<String, dynamic>.from(e as Map))));
       }
       if (readingRaw != null) {
-        _readings.addAll((jsonDecode(readingRaw) as List).map((e) => MeterReadingItem.fromJson(Map<String, dynamic>.from(e as Map))));
+        _readings.addAll((jsonDecode(readingRaw) as List).map((e) => Reading.fromJson(Map<String, dynamic>.from(e as Map))));
       }
     } catch (_) {
       _condominiums.clear();
@@ -178,10 +203,12 @@ class AppData extends ChangeNotifier {
   void removeCondominium(String id) {
     final towerIds = _towers.where((tower) => tower.condominiumId == id).map((tower) => tower.id).toSet();
     final unitIds = _units.where((unit) => towerIds.contains(unit.towerId)).map((unit) => unit.id).toSet();
+    final meterIds = _meters.where((meter) => unitIds.contains(meter.unitId)).map((meter) => meter.id).toSet();
     _condominiums.removeWhere((item) => item.id == id);
     _towers.removeWhere((item) => item.condominiumId == id);
     _units.removeWhere((item) => towerIds.contains(item.towerId));
     _meters.removeWhere((item) => unitIds.contains(item.unitId));
+    _readings.removeWhere((item) => meterIds.contains(item.meterId));
     notifyListeners();
     _save();
   }
@@ -218,9 +245,11 @@ class AppData extends ChangeNotifier {
 
   void removeTower(String id) {
     final unitIds = _units.where((unit) => unit.towerId == id).map((unit) => unit.id).toSet();
+    final meterIds = _meters.where((meter) => unitIds.contains(meter.unitId)).map((meter) => meter.id).toSet();
     _towers.removeWhere((item) => item.id == id);
     _units.removeWhere((item) => item.towerId == id);
     _meters.removeWhere((item) => unitIds.contains(item.unitId));
+    _readings.removeWhere((item) => meterIds.contains(item.meterId));
     notifyListeners();
     _save();
   }
@@ -257,8 +286,10 @@ class AppData extends ChangeNotifier {
   }
 
   void removeUnit(String id) {
+    final meterIds = _meters.where((meter) => meter.unitId == id).map((meter) => meter.id).toSet();
     _units.removeWhere((item) => item.id == id);
     _meters.removeWhere((item) => item.unitId == id);
+    _readings.removeWhere((item) => meterIds.contains(item.meterId));
     notifyListeners();
     _save();
   }
@@ -294,22 +325,26 @@ class AppData extends ChangeNotifier {
 
   void removeMeter(String id) {
     _meters.removeWhere((item) => item.id == id);
+    _readings.removeWhere((item) => item.meterId == id);
     notifyListeners();
     _save();
   }
 
-  void addReading({required String condominium, required String unit, required String meterType, required double previousValue, required double currentValue}) {
-    _readings.add(MeterReadingItem(
+  /// Registra uma leitura para [meterId]. A leitura anterior é sempre a última
+  /// leitura conhecida do próprio medidor (ou zero, se for a primeira).
+  Reading addReading({required String meterId, required double currentValue}) {
+    final previousValue = lastReadingFor(meterId)?.currentValue ?? 0;
+    final reading = Reading(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
-      condominium: condominium,
-      unit: unit,
-      meterType: meterType,
+      meterId: meterId,
       previousValue: previousValue,
       currentValue: currentValue,
       createdAt: DateTime.now(),
-    ));
+    );
+    _readings.add(reading);
     notifyListeners();
     _save();
+    return reading;
   }
 
   void removeReading(String id) {

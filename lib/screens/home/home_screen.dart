@@ -3,6 +3,10 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/app_data.dart';
+import '../../models/meter.dart';
+import '../../models/reading.dart';
+import '../../models/tower.dart';
+import '../../models/unit.dart';
 import '../condominiums/condominium_dashboard_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -344,7 +348,7 @@ class ReadingsPage extends StatelessWidget {
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'readings-fab',
-        onPressed: data.condominiums.isEmpty ? null : () => showDialog(context: context, builder: (_) => const ReadingDialog()),
+        onPressed: data.meters.isEmpty ? null : () => showDialog(context: context, builder: (_) => const ReadingDialog()),
         icon: const Icon(Icons.add_a_photo_outlined),
         label: const Text('Registrar leitura'),
       ),
@@ -398,24 +402,41 @@ class ReadingDialog extends StatefulWidget {
 
 class _ReadingDialogState extends State<ReadingDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _unit = TextEditingController();
-  final _previous = TextEditingController();
   final _current = TextEditingController();
-  String? _condominium;
-  String _type = 'Água';
+  String? _condominiumId;
+  String? _towerId;
+  String? _unitId;
+  String? _meterId;
 
   @override
   void dispose() {
-    _unit.dispose();
-    _previous.dispose();
     _current.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final condos = context.read<AppData>().condominiums;
-    _condominium ??= condos.first.name;
+    final data = context.watch<AppData>();
+    final condos = data.condominiums;
+    _condominiumId ??= condos.isEmpty ? null : condos.first.id;
+
+    final towers = _condominiumId == null ? const <Tower>[] : data.towersFor(_condominiumId!);
+    if (_towerId == null || !towers.any((t) => t.id == _towerId)) {
+      _towerId = towers.isEmpty ? null : towers.first.id;
+    }
+
+    final units = _towerId == null ? const <Unit>[] : data.unitsFor(_towerId!);
+    if (_unitId == null || !units.any((u) => u.id == _unitId)) {
+      _unitId = units.isEmpty ? null : units.first.id;
+    }
+
+    final meters = _unitId == null ? const <Meter>[] : data.metersFor(_unitId!);
+    if (_meterId == null || !meters.any((m) => m.id == _meterId)) {
+      _meterId = meters.isEmpty ? null : meters.first.id;
+    }
+
+    final previousValue = _meterId == null ? null : data.lastReadingFor(_meterId!)?.currentValue ?? 0;
+
     return AlertDialog(
       title: const Text('Registrar leitura'),
       content: SizedBox(
@@ -425,27 +446,74 @@ class _ReadingDialogState extends State<ReadingDialog> {
           child: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               DropdownButtonFormField<String>(
-                initialValue: _condominium,
+                initialValue: _condominiumId,
                 decoration: const InputDecoration(labelText: 'Condomínio'),
-                items: condos.map((e) => DropdownMenuItem(value: e.name, child: Text(e.name))).toList(),
-                onChanged: (value) => setState(() => _condominium = value),
+                items: condos.map((e) => DropdownMenuItem(value: e.id, child: Text(e.name))).toList(),
+                onChanged: (value) => setState(() {
+                  _condominiumId = value;
+                  _towerId = null;
+                  _unitId = null;
+                  _meterId = null;
+                }),
               ),
               const SizedBox(height: 12),
-              TextFormField(controller: _unit, decoration: const InputDecoration(labelText: 'Unidade', hintText: 'Ex.: Torre A • 101'), validator: requiredValidator),
-              const SizedBox(height: 12),
-              SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'Água', icon: Icon(Icons.water_drop_outlined), label: Text('Água')),
-                  ButtonSegment(value: 'Gás', icon: Icon(Icons.local_fire_department_outlined), label: Text('Gás')),
-                ],
-                selected: {_type},
-                onSelectionChanged: (value) => setState(() => _type = value.first),
+              DropdownButtonFormField<String>(
+                initialValue: _towerId,
+                decoration: const InputDecoration(labelText: 'Torre ou bloco'),
+                items: towers.map((e) => DropdownMenuItem(value: e.id, child: Text(e.name))).toList(),
+                onChanged: towers.isEmpty
+                    ? null
+                    : (value) => setState(() {
+                          _towerId = value;
+                          _unitId = null;
+                          _meterId = null;
+                        }),
               ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _unitId,
+                decoration: const InputDecoration(labelText: 'Unidade'),
+                items: units.map((e) => DropdownMenuItem(value: e.id, child: Text('Unidade ${e.number}'))).toList(),
+                onChanged: units.isEmpty
+                    ? null
+                    : (value) => setState(() {
+                          _unitId = value;
+                          _meterId = null;
+                        }),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _meterId,
+                decoration: const InputDecoration(labelText: 'Medidor'),
+                items: meters
+                    .map((e) => DropdownMenuItem(value: e.id, child: Text('${e.type}${e.serialNumber.isEmpty ? '' : ' • ${e.serialNumber}'}')))
+                    .toList(),
+                onChanged: meters.isEmpty ? null : (value) => setState(() => _meterId = value),
+              ),
+              if (meters.isEmpty) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Cadastre um medidor para essa unidade antes de registrar uma leitura.',
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+              ],
               const SizedBox(height: 12),
               Row(children: [
-                Expanded(child: TextFormField(controller: _previous, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Leitura anterior'), validator: numberValidator)),
+                Expanded(
+                  child: InputDecorator(
+                    decoration: const InputDecoration(labelText: 'Leitura anterior'),
+                    child: Text((previousValue ?? 0).toStringAsFixed(1)),
+                  ),
+                ),
                 const SizedBox(width: 12),
-                Expanded(child: TextFormField(controller: _current, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Leitura atual'), validator: numberValidator)),
+                Expanded(
+                  child: TextFormField(
+                    controller: _current,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(labelText: 'Leitura atual'),
+                    validator: numberValidator,
+                  ),
+                ),
               ]),
             ]),
           ),
@@ -454,23 +522,18 @@ class _ReadingDialogState extends State<ReadingDialog> {
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
         FilledButton(
-          onPressed: () {
-            if (!(_formKey.currentState?.validate() ?? false)) return;
-            final previous = parseNumber(_previous.text);
-            final current = parseNumber(_current.text);
-            if (current < previous) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A leitura atual não pode ser menor que a anterior.')));
-              return;
-            }
-            context.read<AppData>().addReading(
-                  condominium: _condominium!,
-                  unit: _unit.text.trim(),
-                  meterType: _type,
-                  previousValue: previous,
-                  currentValue: current,
-                );
-            Navigator.pop(context);
-          },
+          onPressed: meters.isEmpty
+              ? null
+              : () {
+                  if (!(_formKey.currentState?.validate() ?? false)) return;
+                  final current = parseNumber(_current.text);
+                  if (current < (previousValue ?? 0)) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A leitura atual não pode ser menor que a anterior.')));
+                    return;
+                  }
+                  context.read<AppData>().addReading(meterId: _meterId!, currentValue: current);
+                  Navigator.pop(context);
+                },
           child: const Text('Salvar leitura'),
         ),
       ],
@@ -480,18 +543,19 @@ class _ReadingDialogState extends State<ReadingDialog> {
 
 class ReadingTile extends StatelessWidget {
   const ReadingTile({super.key, required this.item});
-  final MeterReadingItem item;
+  final Reading item;
 
   @override
   Widget build(BuildContext context) {
-    final water = item.meterType == 'Água';
+    final data = context.watch<AppData>();
+    final meter = data.meterById(item.meterId);
+    final water = meter?.type != meterTypeGas;
     return Card(
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         leading: CircleAvatar(child: Icon(water ? Icons.water_drop_outlined : Icons.local_fire_department_outlined)),
-        title: Text('${item.unit} • ${item.meterType}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('${item.condominium}\n${DateFormat('dd/MM/yyyy HH:mm').format(item.createdAt)}'),
-        isThreeLine: true,
+        title: Text(data.meterLabel(item.meterId), style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(DateFormat('dd/MM/yyyy HH:mm').format(item.createdAt)),
         trailing: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text(item.currentValue.toStringAsFixed(1), style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
           Text('+${item.consumption.toStringAsFixed(1)}'),
@@ -507,8 +571,8 @@ class ReportsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = context.watch<AppData>();
-    final water = data.readings.where((e) => e.meterType == 'Água').fold<double>(0, (sum, e) => sum + e.consumption);
-    final gas = data.readings.where((e) => e.meterType == 'Gás').fold<double>(0, (sum, e) => sum + e.consumption);
+    final water = data.readings.where((e) => data.meterById(e.meterId)?.type != meterTypeGas).fold<double>(0, (sum, e) => sum + e.consumption);
+    final gas = data.readings.where((e) => data.meterById(e.meterId)?.type == meterTypeGas).fold<double>(0, (sum, e) => sum + e.consumption);
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
