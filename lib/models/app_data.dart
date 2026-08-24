@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_settings.dart';
 import 'meter.dart';
+import 'no_reading_reason.dart';
 import 'reading.dart';
 import 'tower.dart';
 import 'unit.dart';
@@ -32,17 +34,23 @@ class AppData extends ChangeNotifier {
   static const _towersKey = 'mvp_towers';
   static const _unitsKey = 'mvp_units';
   static const _metersKey = 'mvp_meters';
+  static const _settingsKey = 'mvp_settings';
+  static const _noReadingKey = 'mvp_no_reading';
   final List<CondoItem> _condominiums = [];
   final List<Reading> _readings = [];
   final List<Tower> _towers = [];
   final List<Unit> _units = [];
   final List<Meter> _meters = [];
+  final List<NoReadingRecord> _noReadingRecords = [];
+  AppSettings _settings = const AppSettings();
 
   List<CondoItem> get condominiums => List.unmodifiable(_condominiums);
   List<Reading> get readings => List.unmodifiable(_readings.reversed);
   List<Tower> get towers => List.unmodifiable(_towers);
   List<Unit> get units => List.unmodifiable(_units);
   List<Meter> get meters => List.unmodifiable(_meters);
+  List<NoReadingRecord> get noReadingRecords => List.unmodifiable(_noReadingRecords.reversed);
+  AppSettings get settings => _settings;
 
   List<Tower> towersFor(String condominiumId) {
     final result = _towers.where((item) => item.condominiumId == condominiumId).toList();
@@ -149,6 +157,12 @@ class AppData extends ChangeNotifier {
     return history.isEmpty ? null : history.first;
   }
 
+  List<NoReadingRecord> noReadingRecordsForMeter(String meterId) {
+    final result = _noReadingRecords.where((item) => item.meterId == meterId).toList();
+    result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return List.unmodifiable(result);
+  }
+
   Future<void> load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -157,6 +171,11 @@ class AppData extends ChangeNotifier {
       final towerRaw = prefs.getString(_towersKey);
       final unitRaw = prefs.getString(_unitsKey);
       final meterRaw = prefs.getString(_metersKey);
+      final settingsRaw = prefs.getString(_settingsKey);
+      final noReadingRaw = prefs.getString(_noReadingKey);
+      if (settingsRaw != null) {
+        _settings = AppSettings.fromJson(Map<String, dynamic>.from(jsonDecode(settingsRaw) as Map));
+      }
       if (condoRaw != null) {
         _condominiums.addAll((jsonDecode(condoRaw) as List).map((e) => CondoItem.fromJson(Map<String, dynamic>.from(e as Map))));
       }
@@ -172,12 +191,17 @@ class AppData extends ChangeNotifier {
       if (readingRaw != null) {
         _readings.addAll((jsonDecode(readingRaw) as List).map((e) => Reading.fromJson(Map<String, dynamic>.from(e as Map))));
       }
+      if (noReadingRaw != null) {
+        _noReadingRecords.addAll((jsonDecode(noReadingRaw) as List).map((e) => NoReadingRecord.fromJson(Map<String, dynamic>.from(e as Map))));
+      }
     } catch (_) {
       _condominiums.clear();
       _readings.clear();
       _towers.clear();
       _units.clear();
       _meters.clear();
+      _noReadingRecords.clear();
+      _settings = const AppSettings();
     }
     if (_condominiums.isEmpty) {
       _condominiums.add(CondoItem(id: '1', name: 'Condomínio de Demonstração', city: 'Porto Alegre', towers: 4, units: 96));
@@ -192,6 +216,14 @@ class AppData extends ChangeNotifier {
     await prefs.setString(_towersKey, jsonEncode(_towers.map((e) => e.toJson()).toList()));
     await prefs.setString(_unitsKey, jsonEncode(_units.map((e) => e.toJson()).toList()));
     await prefs.setString(_metersKey, jsonEncode(_meters.map((e) => e.toJson()).toList()));
+    await prefs.setString(_settingsKey, jsonEncode(_settings.toJson()));
+    await prefs.setString(_noReadingKey, jsonEncode(_noReadingRecords.map((e) => e.toJson()).toList()));
+  }
+
+  void updateSettings(AppSettings updated) {
+    _settings = updated;
+    notifyListeners();
+    _save();
   }
 
   void addCondominium({required String name, required String city, required int towers, required int units}) {
@@ -209,6 +241,7 @@ class AppData extends ChangeNotifier {
     _units.removeWhere((item) => towerIds.contains(item.towerId));
     _meters.removeWhere((item) => unitIds.contains(item.unitId));
     _readings.removeWhere((item) => meterIds.contains(item.meterId));
+    _noReadingRecords.removeWhere((item) => meterIds.contains(item.meterId));
     notifyListeners();
     _save();
   }
@@ -250,6 +283,7 @@ class AppData extends ChangeNotifier {
     _units.removeWhere((item) => item.towerId == id);
     _meters.removeWhere((item) => unitIds.contains(item.unitId));
     _readings.removeWhere((item) => meterIds.contains(item.meterId));
+    _noReadingRecords.removeWhere((item) => meterIds.contains(item.meterId));
     notifyListeners();
     _save();
   }
@@ -290,6 +324,7 @@ class AppData extends ChangeNotifier {
     _units.removeWhere((item) => item.id == id);
     _meters.removeWhere((item) => item.unitId == id);
     _readings.removeWhere((item) => meterIds.contains(item.meterId));
+    _noReadingRecords.removeWhere((item) => meterIds.contains(item.meterId));
     notifyListeners();
     _save();
   }
@@ -326,14 +361,25 @@ class AppData extends ChangeNotifier {
   void removeMeter(String id) {
     _meters.removeWhere((item) => item.id == id);
     _readings.removeWhere((item) => item.meterId == id);
+    _noReadingRecords.removeWhere((item) => item.meterId == id);
     notifyListeners();
     _save();
   }
 
   /// Registra uma leitura para [meterId]. A leitura anterior é sempre a última
   /// leitura conhecida do próprio medidor (ou zero, se for a primeira).
-  Reading addReading({required String meterId, required double currentValue, String? photoBase64}) {
+  /// [readerName] cai para `settings.readerName` quando não informado.
+  Reading addReading({
+    required String meterId,
+    required double currentValue,
+    String? photoBase64,
+    double? latitude,
+    double? longitude,
+    String? readerName,
+    String? signatureBase64,
+  }) {
     final previousValue = lastReadingFor(meterId)?.currentValue ?? 0;
+    final resolvedReader = readerName ?? _settings.readerName;
     final reading = Reading(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       meterId: meterId,
@@ -341,6 +387,10 @@ class AppData extends ChangeNotifier {
       currentValue: currentValue,
       createdAt: DateTime.now(),
       photoBase64: photoBase64,
+      latitude: latitude,
+      longitude: longitude,
+      readerName: resolvedReader.isEmpty ? null : resolvedReader,
+      signatureBase64: signatureBase64,
     );
     _readings.add(reading);
     notifyListeners();
@@ -350,6 +400,30 @@ class AppData extends ChangeNotifier {
 
   void removeReading(String id) {
     _readings.removeWhere((item) => item.id == id);
+    notifyListeners();
+    _save();
+  }
+
+  NoReadingRecord addNoReadingRecord({
+    required String meterId,
+    required String reason,
+    String notes = '',
+  }) {
+    final record = NoReadingRecord(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      meterId: meterId,
+      reason: reason,
+      notes: notes,
+      createdAt: DateTime.now(),
+    );
+    _noReadingRecords.add(record);
+    notifyListeners();
+    _save();
+    return record;
+  }
+
+  void removeNoReadingRecord(String id) {
+    _noReadingRecords.removeWhere((item) => item.id == id);
     notifyListeners();
     _save();
   }

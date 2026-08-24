@@ -124,4 +124,78 @@ void main() {
     final withPhoto = data.addReading(meterId: meterId, currentValue: 20, photoBase64: 'Zm9v');
     expect(withPhoto.photoBase64, 'Zm9v');
   });
+
+  test('addReading stores GPS coordinates and falls back to the settings reader name', () async {
+    final data = AppData();
+    await data.load();
+
+    final condominiumId = data.condominiums.first.id;
+    data.addTower(condominiumId: condominiumId, name: 'Torre F', code: 'F');
+    final towerId = data.towersFor(condominiumId).first.id;
+    data.addUnit(towerId: towerId, number: '601');
+    final unitId = data.unitsFor(towerId).first.id;
+    data.addMeter(unitId: unitId, type: meterTypeWater);
+    final meterId = data.metersFor(unitId).first.id;
+
+    data.updateSettings(data.settings.copyWith(readerName: 'Valério'));
+
+    final withLocation = data.addReading(
+      meterId: meterId,
+      currentValue: 10,
+      latitude: -23.5,
+      longitude: -46.6,
+    );
+    expect(withLocation.latitude, -23.5);
+    expect(withLocation.longitude, -46.6);
+    expect(withLocation.hasLocation, isTrue);
+    expect(withLocation.readerName, 'Valério');
+
+    final explicitReader = data.addReading(meterId: meterId, currentValue: 20, readerName: 'Outro leiturista');
+    expect(explicitReader.readerName, 'Outro leiturista');
+    expect(explicitReader.hasLocation, isFalse);
+  });
+
+  test('updateSettings persists across reloads', () async {
+    final data = AppData();
+    await data.load();
+
+    data.updateSettings(
+      data.settings.copyWith(confirmReading: false, registerLocation: true, readerName: 'Valério'),
+    );
+    // updateSettings persists fire-and-forget; let the pending write land
+    // before reading it back through a fresh AppData instance.
+    await Future<void>.delayed(Duration.zero);
+
+    final reloaded = AppData();
+    await reloaded.load();
+
+    expect(reloaded.settings.confirmReading, isFalse);
+    expect(reloaded.settings.registerLocation, isTrue);
+    expect(reloaded.settings.readerName, 'Valério');
+  });
+
+  test('no-reading records can be added, listed per meter, removed and cascade on meter removal', () async {
+    final data = AppData();
+    await data.load();
+
+    final condominiumId = data.condominiums.first.id;
+    data.addTower(condominiumId: condominiumId, name: 'Torre G', code: 'G');
+    final towerId = data.towersFor(condominiumId).first.id;
+    data.addUnit(towerId: towerId, number: '701');
+    final unitId = data.unitsFor(towerId).first.id;
+    data.addMeter(unitId: unitId, type: meterTypeWater);
+    final meterId = data.metersFor(unitId).first.id;
+
+    final record = data.addNoReadingRecord(meterId: meterId, reason: 'Morador ausente', notes: 'Sem resposta.');
+
+    expect(data.noReadingRecordsForMeter(meterId), hasLength(1));
+    expect(data.noReadingRecords, contains(record));
+
+    data.removeNoReadingRecord(record.id);
+    expect(data.noReadingRecordsForMeter(meterId), isEmpty);
+
+    data.addNoReadingRecord(meterId: meterId, reason: 'Outro');
+    data.removeMeter(meterId);
+    expect(data.noReadingRecordsForMeter(meterId), isEmpty);
+  });
 }
