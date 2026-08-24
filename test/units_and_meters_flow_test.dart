@@ -99,7 +99,7 @@ void main() {
     await tester.enterText(find.widgetWithText(TextFormField, 'Leitura atual *'), '50');
     await tester.tap(find.text('Salvar'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Anterior 0.0 → Atual 50.0'), findsOneWidget);
+    expect(find.textContaining('Anterior 0.0 • Atual 50.0'), findsOneWidget);
     expect(find.text('+50.0'), findsWidgets);
 
     // Registra uma segunda leitura: a anterior sugerida deve ser a última leitura salva.
@@ -109,7 +109,7 @@ void main() {
     await tester.enterText(find.widgetWithText(TextFormField, 'Leitura atual *'), '80');
     await tester.tap(find.text('Salvar'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Anterior 50.0 → Atual 80.0'), findsOneWidget);
+    expect(find.textContaining('Anterior 50.0 • Atual 80.0'), findsOneWidget);
     expect(find.text('+30.0'), findsWidgets);
     expect(find.text('2 leitura(s) registrada(s)'), findsOneWidget);
   });

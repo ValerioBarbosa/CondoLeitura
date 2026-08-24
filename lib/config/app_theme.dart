@@ -8,6 +8,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
+      fontFamily: 'Roboto',
       scaffoldBackgroundColor: const Color(0xFFF5F7FA),
       appBarTheme: const AppBarTheme(centerTitle: false),
       cardTheme: const CardThemeData(
@@ -30,6 +31,7 @@ class AppTheme {
   static ThemeData get dark {
     return ThemeData(
       useMaterial3: true,
+      fontFamily: 'Roboto',
       colorScheme: ColorScheme.fromSeed(
         seedColor: _seed,
         brightness: Brightness.dark,

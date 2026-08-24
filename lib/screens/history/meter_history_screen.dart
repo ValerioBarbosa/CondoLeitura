@@ -18,6 +18,17 @@ class MeterHistoryScreen extends StatelessWidget {
     final data = context.watch<AppData>();
     final history = data.readingsForMeter(meter.id);
     final water = meter.type != meterTypeGas;
+    final unit = data.unitById(meter.unitId);
+    final tower = unit == null ? null : data.towerById(unit.towerId);
+    // Deliberately shorter than AppData.meterLabel (which also includes the
+    // condominium name): the user already drilled down through Torres ->
+    // Unidades to get here, and the full breadcrumb was truncating
+    // unreadably in the AppBar's single-line title on narrow screens.
+    final subtitle = [
+      if (tower != null) tower.name,
+      if (unit != null) 'Unidade ${unit.number}',
+      meter.type,
+    ].join(' • ');
 
     return Scaffold(
       appBar: AppBar(
@@ -26,7 +37,7 @@ class MeterHistoryScreen extends StatelessWidget {
           children: [
             const Text('Histórico de leituras'),
             Text(
-              data.meterLabel(meter.id),
+              subtitle,
               style: Theme.of(context).textTheme.labelMedium,
             ),
           ],
@@ -152,7 +163,7 @@ class MeterHistoryScreen extends StatelessWidget {
                         DateFormat('dd/MM/yyyy HH:mm').format(reading.createdAt),
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      subtitle: Text('Anterior ${reading.previousValue.toStringAsFixed(1)} → Atual ${reading.currentValue.toStringAsFixed(1)}'),
+                      subtitle: Text('Anterior ${reading.previousValue.toStringAsFixed(1)} • Atual ${reading.currentValue.toStringAsFixed(1)}'),
                       trailing: Text(
                         '+${reading.consumption.toStringAsFixed(1)}',
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
