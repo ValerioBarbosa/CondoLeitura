@@ -99,6 +99,9 @@ void main() {
     await tester.enterText(find.widgetWithText(TextFormField, 'Leitura atual *'), '50');
     await tester.tap(find.text('Salvar'));
     await tester.pumpAndSettle();
+    // Por padrão, "Confirmar leitura" está ativo: uma revisão extra é exigida.
+    await tester.tap(find.text('Confirmar'));
+    await tester.pumpAndSettle();
     expect(find.textContaining('Anterior 0.0 • Atual 50.0'), findsOneWidget);
     expect(find.text('+50.0'), findsWidgets);
 
@@ -108,6 +111,8 @@ void main() {
     expect(find.text('50.0'), findsWidgets); // leitura anterior sugerida = última leitura
     await tester.enterText(find.widgetWithText(TextFormField, 'Leitura atual *'), '80');
     await tester.tap(find.text('Salvar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Confirmar'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Anterior 50.0 • Atual 80.0'), findsOneWidget);
     expect(find.text('+30.0'), findsWidgets);

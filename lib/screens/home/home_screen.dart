@@ -9,7 +9,11 @@ import '../../models/meter.dart';
 import '../../models/reading.dart';
 import '../../models/tower.dart';
 import '../../models/unit.dart';
+import '../../services/export/report_export_service.dart';
+import '../../widgets/no_reading_dialog.dart';
 import '../../widgets/photo_capture_field.dart';
+import '../../widgets/reading_save_helpers.dart';
+import '../../widgets/signature_pad.dart';
 import '../condominiums/condominium_dashboard_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -411,6 +415,8 @@ class _ReadingDialogState extends State<ReadingDialog> {
   String? _unitId;
   String? _meterId;
   String? _photoBase64;
+  String? _signatureBase64;
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -524,30 +530,47 @@ class _ReadingDialogState extends State<ReadingDialog> {
                 onChanged: (value) => setState(() => _photoBase64 = value),
                 onTextRecognized: (digits) => _current.text = digits,
               ),
+              const SizedBox(height: 12),
+              SignaturePad(onChanged: (value) => _signatureBase64 = value),
             ]),
           ),
         ),
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        TextButton(
+          onPressed: _meterId == null ? null : () => showNoReadingDialog(context, _meterId!),
+          child: const Text('Sem leitura'),
+        ),
         FilledButton(
-          onPressed: meters.isEmpty
+          onPressed: meters.isEmpty || _saving
               ? null
-              : () {
+              : () async {
                   if (!(_formKey.currentState?.validate() ?? false)) return;
                   final current = parseNumber(_current.text);
                   if (current < (previousValue ?? 0)) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A leitura atual não pode ser menor que a anterior.')));
                     return;
                   }
-                  context.read<AppData>().addReading(
-                        meterId: _meterId!,
-                        currentValue: current,
-                        photoBase64: _photoBase64,
-                      );
-                  Navigator.pop(context);
+                  final data = context.read<AppData>();
+                  if (!await confirmReadingIfNeeded(context, data.settings)) return;
+                  if (!context.mounted) return;
+
+                  setState(() => _saving = true);
+                  final location = await captureLocationIfEnabled(data.settings);
+                  data.addReading(
+                    meterId: _meterId!,
+                    currentValue: current,
+                    photoBase64: _photoBase64,
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                    signatureBase64: _signatureBase64,
+                  );
+                  if (context.mounted) Navigator.pop(context);
                 },
-          child: const Text('Salvar leitura'),
+          child: _saving
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('Salvar leitura'),
         ),
       ],
     );
@@ -580,18 +603,101 @@ class ReadingTile extends StatelessWidget {
   }
 }
 
-class ReportsPage extends StatelessWidget {
+enum _ReportPeriod { all, last7, last30, last90 }
+
+class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
+
+  @override
+  State<ReportsPage> createState() => _ReportsPageState();
+}
+
+class _ReportsPageState extends State<ReportsPage> {
+  String? _condominiumId;
+  _ReportPeriod _period = _ReportPeriod.all;
+  bool _exporting = false;
+
+  List<Reading> _filteredReadings(AppData data) {
+    final cutoff = switch (_period) {
+      _ReportPeriod.all => null,
+      _ReportPeriod.last7 => DateTime.now().subtract(const Duration(days: 7)),
+      _ReportPeriod.last30 => DateTime.now().subtract(const Duration(days: 30)),
+      _ReportPeriod.last90 => DateTime.now().subtract(const Duration(days: 90)),
+    };
+    return data.readings.where((reading) {
+      if (cutoff != null && reading.createdAt.isBefore(cutoff)) return false;
+      if (_condominiumId == null) return true;
+      final meter = data.meterById(reading.meterId);
+      final unit = meter == null ? null : data.unitById(meter.unitId);
+      final tower = unit == null ? null : data.towerById(unit.towerId);
+      return tower?.condominiumId == _condominiumId;
+    }).toList();
+  }
+
+  Future<void> _export(Future<void> Function() run) async {
+    setState(() => _exporting = true);
+    try {
+      await run();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Relatório gerado com sucesso.')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível gerar o relatório.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final data = context.watch<AppData>();
-    final water = data.readings.where((e) => data.meterById(e.meterId)?.type != meterTypeGas).fold<double>(0, (sum, e) => sum + e.consumption);
-    final gas = data.readings.where((e) => data.meterById(e.meterId)?.type == meterTypeGas).fold<double>(0, (sum, e) => sum + e.consumption);
+    final filtered = _filteredReadings(data);
+    final water = filtered.where((e) => data.meterById(e.meterId)?.type != meterTypeGas).fold<double>(0, (sum, e) => sum + e.consumption);
+    final gas = filtered.where((e) => data.meterById(e.meterId)?.type == meterTypeGas).fold<double>(0, (sum, e) => sum + e.consumption);
+
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
         Text('Resumo operacional', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(children: [
+              Expanded(
+                child: DropdownButtonFormField<String?>(
+                  initialValue: _condominiumId,
+                  decoration: const InputDecoration(labelText: 'Condomínio'),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('Todos os condomínios')),
+                    ...data.condominiums.map((e) => DropdownMenuItem(value: e.id, child: Text(e.name))),
+                  ],
+                  onChanged: (value) => setState(() => _condominiumId = value),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownButtonFormField<_ReportPeriod>(
+                  initialValue: _period,
+                  decoration: const InputDecoration(labelText: 'Período'),
+                  items: const [
+                    DropdownMenuItem(value: _ReportPeriod.all, child: Text('Todo o período')),
+                    DropdownMenuItem(value: _ReportPeriod.last7, child: Text('Últimos 7 dias')),
+                    DropdownMenuItem(value: _ReportPeriod.last30, child: Text('Últimos 30 dias')),
+                    DropdownMenuItem(value: _ReportPeriod.last90, child: Text('Últimos 90 dias')),
+                  ],
+                  onChanged: (value) => setState(() => _period = value ?? _period),
+                ),
+              ),
+            ]),
+          ),
+        ),
         const SizedBox(height: 16),
         Card(
           child: Padding(
@@ -601,7 +707,7 @@ class ReportsPage extends StatelessWidget {
               const Divider(height: 28),
               ReportRow(icon: Icons.local_fire_department_outlined, label: 'Consumo de gás', value: gas.toStringAsFixed(1)),
               const Divider(height: 28),
-              ReportRow(icon: Icons.fact_check_outlined, label: 'Leituras registradas', value: '${data.readings.length}'),
+              ReportRow(icon: Icons.fact_check_outlined, label: 'Leituras no período', value: '${filtered.length}'),
             ]),
           ),
         ),
@@ -612,12 +718,34 @@ class ReportsPage extends StatelessWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Text('Exportação', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              const Text('Os serviços de PDF, Excel e compartilhamento já estão preparados no projeto.'),
+              const Text('Gera um relatório com as leituras filtradas acima. Na Web, o arquivo é baixado direto pelo navegador.'),
               const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: data.readings.isEmpty ? null : () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Relatório preparado. Integração de arquivo disponível na versão móvel.'))),
-                icon: const Icon(Icons.picture_as_pdf_outlined),
-                label: const Text('Gerar relatório'),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: filtered.isEmpty || _exporting
+                        ? null
+                        : () => _export(() => ReportExportService.exportCsv(data, filtered)),
+                    icon: const Icon(Icons.table_chart_outlined),
+                    label: const Text('Exportar CSV'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: filtered.isEmpty || _exporting
+                        ? null
+                        : () => _export(() => ReportExportService.exportExcel(data, filtered)),
+                    icon: const Icon(Icons.grid_on_outlined),
+                    label: const Text('Exportar Excel'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: filtered.isEmpty || _exporting
+                        ? null
+                        : () => _export(() => ReportExportService.exportPdf(data, filtered)),
+                    icon: const Icon(Icons.picture_as_pdf_outlined),
+                    label: const Text('Exportar PDF'),
+                  ),
+                ],
               ),
             ]),
           ),
@@ -650,22 +778,70 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool _confirmReading = true;
-  bool _location = false;
-  bool _sync = true;
+  final _readerName = TextEditingController();
+  String? _syncedReaderName;
+
+  @override
+  void dispose() {
+    _readerName.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final data = context.watch<AppData>();
+    final settings = data.settings;
+
+    // AppData loads its persisted settings asynchronously after this page's
+    // first build, so the controller can't just be seeded once in initState:
+    // it has to pick up the loaded readerName whenever it actually changes,
+    // without clobbering text the user is actively typing.
+    if (_syncedReaderName != settings.readerName) {
+      _syncedReaderName = settings.readerName;
+      if (_readerName.text != settings.readerName) {
+        _readerName.text = settings.readerName;
+      }
+    }
+
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
         Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _readerName,
+              decoration: const InputDecoration(
+                labelText: 'Nome do leiturista',
+                helperText: 'Aparece no histórico das leituras registradas por você.',
+              ),
+              onChanged: (value) => data.updateSettings(settings.copyWith(readerName: value)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Card(
           child: Column(children: [
-            SwitchListTile(value: _confirmReading, onChanged: (v) => setState(() => _confirmReading = v), title: const Text('Confirmar leitura'), subtitle: const Text('Exigir revisão antes de salvar.')),
+            SwitchListTile(
+              value: settings.confirmReading,
+              onChanged: (v) => data.updateSettings(settings.copyWith(confirmReading: v)),
+              title: const Text('Confirmar leitura'),
+              subtitle: const Text('Exigir revisão antes de salvar.'),
+            ),
             const Divider(height: 1),
-            SwitchListTile(value: _location, onChanged: (v) => setState(() => _location = v), title: const Text('Registrar localização'), subtitle: const Text('Salvar GPS junto da leitura.')),
+            SwitchListTile(
+              value: settings.registerLocation,
+              onChanged: (v) => data.updateSettings(settings.copyWith(registerLocation: v)),
+              title: const Text('Registrar localização'),
+              subtitle: const Text('Salvar GPS junto da leitura, quando o navegador ou aparelho permitir.'),
+            ),
             const Divider(height: 1),
-            SwitchListTile(value: _sync, onChanged: (v) => setState(() => _sync = v), title: const Text('Sincronização automática'), subtitle: const Text('Enviar dados quando houver internet.')),
+            SwitchListTile(
+              value: settings.autoSync,
+              onChanged: (v) => data.updateSettings(settings.copyWith(autoSync: v)),
+              title: const Text('Sincronização automática'),
+              subtitle: const Text('Ainda sem efeito: o app não tem servidor configurado, então os dados ficam só neste aparelho.'),
+            ),
           ]),
         ),
         const SizedBox(height: 16),

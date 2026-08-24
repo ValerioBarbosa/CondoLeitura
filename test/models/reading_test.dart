@@ -53,6 +53,40 @@ void main() {
     expect(reading.consumption, 5.5);
   });
 
+  test('Reading round-trips location, reader name and signature, defaulting to null when absent', () {
+    final withExtras = Reading(
+      id: 'reading-1',
+      meterId: 'meter-1',
+      previousValue: 0,
+      currentValue: 10,
+      createdAt: DateTime.utc(2026, 1, 1),
+      latitude: -23.5,
+      longitude: -46.6,
+      readerName: 'Valério',
+      signatureBase64: 'c2lnbmF0dXJl',
+    );
+    final decoded = Reading.fromJson(withExtras.toJson());
+
+    expect(decoded.latitude, -23.5);
+    expect(decoded.longitude, -46.6);
+    expect(decoded.hasLocation, isTrue);
+    expect(decoded.readerName, 'Valério');
+    expect(decoded.signatureBase64, 'c2lnbmF0dXJl');
+
+    final withoutExtras = Reading.fromJson({
+      'id': 'reading-2',
+      'meterId': 'meter-1',
+      'previousValue': 0,
+      'currentValue': 10,
+      'createdAt': DateTime.utc(2026, 1, 1).toIso8601String(),
+    });
+    expect(withoutExtras.latitude, isNull);
+    expect(withoutExtras.longitude, isNull);
+    expect(withoutExtras.hasLocation, isFalse);
+    expect(withoutExtras.readerName, isNull);
+    expect(withoutExtras.signatureBase64, isNull);
+  });
+
   test('copyWith changes only the given fields', () {
     final reading = Reading(
       id: 'reading-1',
