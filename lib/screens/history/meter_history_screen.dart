@@ -219,7 +219,10 @@ class _NewReadingDialogState extends State<_NewReadingDialog> {
                 validator: _numberValidator,
               ),
               const SizedBox(height: 12),
-              PhotoCaptureField(onChanged: (value) => setState(() => _photoBase64 = value)),
+              PhotoCaptureField(
+                onChanged: (value) => setState(() => _photoBase64 = value),
+                onTextRecognized: (digits) => _current.text = digits,
+              ),
             ],
           ),
         ),

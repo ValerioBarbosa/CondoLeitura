@@ -22,3 +22,6 @@
 20. Consumo é sempre calculado (atual − anterior), nunca armazenado.
 21. Ao excluir um medidor, seu histórico de leituras é excluído junto.
 22. Histórico de leituras de um medidor deve ficar acessível a partir do próprio medidor.
+23. Foto do medidor é opcional na leitura.
+24. Valor sugerido por OCR é sempre uma sugestão editável no campo de leitura atual — nunca preenche e confirma uma leitura sozinho; a confirmação manual do leiturista é sempre exigida.
+25. OCR é uma tentativa best-effort: qualquer falha de reconhecimento apenas deixa de sugerir um valor, sem impedir a digitação manual.

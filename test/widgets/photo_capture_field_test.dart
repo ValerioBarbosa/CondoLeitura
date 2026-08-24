@@ -56,4 +56,24 @@ void main() {
     expect(captured, isNull);
     expect(find.text('Fotografar medidor'), findsOneWidget);
   });
+
+  testWidgets('does not attempt OCR when the platform does not support it', (tester) async {
+    var recognizedCalled = false;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: PhotoCaptureField(
+          onChanged: (_) {},
+          onTextRecognized: (_) => recognizedCalled = true,
+        ),
+      ),
+    ));
+
+    await tester.tap(find.text('Fotografar medidor'));
+    await tester.pumpAndSettle();
+
+    // Este ambiente de teste roda em Linux, onde OcrService.isSupported é
+    // false, então nenhuma sugestão deve ser feita nem indicador exibido.
+    expect(recognizedCalled, isFalse);
+    expect(find.text('Lendo o medidor...'), findsNothing);
+  });
 }

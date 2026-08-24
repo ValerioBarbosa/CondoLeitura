@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
+import '../services/ocr/ocr_service.dart';
 
 /// Campo para fotografar o medidor no momento da leitura.
 ///
@@ -9,10 +12,15 @@ import 'package:image_picker/image_picker.dart';
 /// um caminho de arquivo: no Web não existe um caminho persistente entre
 /// sessões, então bytes é a única representação que funciona igual em
 /// Web, Android e iOS.
+///
+/// Quando o OCR está disponível na plataforma (Android/iOS nativo), tenta
+/// reconhecer o valor mostrado no medidor e sugere via [onTextRecognized] —
+/// sempre como sugestão editável, nunca preenchendo e enviando sozinho.
 class PhotoCaptureField extends StatefulWidget {
-  const PhotoCaptureField({super.key, required this.onChanged});
+  const PhotoCaptureField({super.key, required this.onChanged, this.onTextRecognized});
 
   final ValueChanged<String?> onChanged;
+  final ValueChanged<String>? onTextRecognized;
 
   @override
   State<PhotoCaptureField> createState() => _PhotoCaptureFieldState();
@@ -21,6 +29,7 @@ class PhotoCaptureField extends StatefulWidget {
 class _PhotoCaptureFieldState extends State<PhotoCaptureField> {
   String? _photoBase64;
   bool _capturing = false;
+  bool _recognizing = false;
 
   Future<void> _capture() async {
     setState(() => _capturing = true);
@@ -34,6 +43,7 @@ class _PhotoCaptureFieldState extends State<PhotoCaptureField> {
       final bytes = await picked.readAsBytes();
       setState(() => _photoBase64 = base64Encode(bytes));
       widget.onChanged(_photoBase64);
+      _recognize(bytes);
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -42,6 +52,21 @@ class _PhotoCaptureFieldState extends State<PhotoCaptureField> {
       }
     } finally {
       if (mounted) setState(() => _capturing = false);
+    }
+  }
+
+  Future<void> _recognize(Uint8List bytes) async {
+    if (!OcrService.isSupported || widget.onTextRecognized == null) return;
+    setState(() => _recognizing = true);
+    try {
+      final digits = await OcrService.recognizeMeterDigits(bytes);
+      if (digits != null && mounted) {
+        widget.onTextRecognized!(digits);
+      }
+    } catch (_) {
+      // Reconhecimento é só uma sugestão; qualquer falha apenas deixa de sugerir.
+    } finally {
+      if (mounted) setState(() => _recognizing = false);
     }
   }
 
@@ -62,23 +87,38 @@ class _PhotoCaptureFieldState extends State<PhotoCaptureField> {
         label: const Text('Fotografar medidor'),
       );
     }
-    return Stack(
-      alignment: Alignment.topRight,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.memory(
-            base64Decode(photo),
-            height: 160,
-            width: double.infinity,
-            fit: BoxFit.cover,
+        Stack(
+          alignment: Alignment.topRight,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.memory(
+                base64Decode(photo),
+                height: 160,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+            IconButton.filled(
+              onPressed: _remove,
+              icon: const Icon(Icons.close, size: 18),
+              tooltip: 'Remover foto',
+            ),
+          ],
+        ),
+        if (_recognizing) ...[
+          const SizedBox(height: 8),
+          const Row(
+            children: [
+              SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+              SizedBox(width: 8),
+              Text('Lendo o medidor...', style: TextStyle(fontStyle: FontStyle.italic)),
+            ],
           ),
-        ),
-        IconButton.filled(
-          onPressed: _remove,
-          icon: const Icon(Icons.close, size: 18),
-          tooltip: 'Remover foto',
-        ),
+        ],
       ],
     );
   }
