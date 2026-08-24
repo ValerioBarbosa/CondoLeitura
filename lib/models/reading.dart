@@ -5,6 +5,7 @@ class Reading {
     required this.previousValue,
     required this.currentValue,
     required this.createdAt,
+    this.photoBase64,
   });
 
   final String id;
@@ -12,6 +13,11 @@ class Reading {
   final double previousValue;
   final double currentValue;
   final DateTime createdAt;
+
+  /// Foto do medidor no momento da leitura, codificada em base64.
+  /// Guardada como bytes (em vez de um caminho de arquivo) porque no Web
+  /// não existe um caminho de arquivo persistente entre sessões.
+  final String? photoBase64;
 
   double get consumption => currentValue - previousValue;
 
@@ -21,6 +27,7 @@ class Reading {
     double? previousValue,
     double? currentValue,
     DateTime? createdAt,
+    String? photoBase64,
   }) {
     return Reading(
       id: id ?? this.id,
@@ -28,6 +35,7 @@ class Reading {
       previousValue: previousValue ?? this.previousValue,
       currentValue: currentValue ?? this.currentValue,
       createdAt: createdAt ?? this.createdAt,
+      photoBase64: photoBase64 ?? this.photoBase64,
     );
   }
 
@@ -37,6 +45,7 @@ class Reading {
         'previousValue': previousValue,
         'currentValue': currentValue,
         'createdAt': createdAt.toIso8601String(),
+        'photoBase64': photoBase64,
       };
 
   factory Reading.fromJson(Map<String, dynamic> json) {
@@ -47,6 +56,7 @@ class Reading {
       previousValue: (json['previousValue'] as num).toDouble(),
       currentValue: (json['currentValue'] as num).toDouble(),
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? now,
+      photoBase64: json['photoBase64'] as String?,
     );
   }
 }

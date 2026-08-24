@@ -105,4 +105,23 @@ void main() {
     expect(data.readingsForMeter(meterId), isEmpty);
     expect(data.totalConsumption, 0);
   });
+
+  test('addReading stores the optional photo and defaults it to null', () async {
+    final data = AppData();
+    await data.load();
+
+    final condominiumId = data.condominiums.first.id;
+    data.addTower(condominiumId: condominiumId, name: 'Torre E', code: 'E');
+    final towerId = data.towersFor(condominiumId).first.id;
+    data.addUnit(towerId: towerId, number: '501');
+    final unitId = data.unitsFor(towerId).first.id;
+    data.addMeter(unitId: unitId, type: meterTypeWater);
+    final meterId = data.metersFor(unitId).first.id;
+
+    final withoutPhoto = data.addReading(meterId: meterId, currentValue: 10);
+    expect(withoutPhoto.photoBase64, isNull);
+
+    final withPhoto = data.addReading(meterId: meterId, currentValue: 20, photoBase64: 'Zm9v');
+    expect(withPhoto.photoBase64, 'Zm9v');
+  });
 }

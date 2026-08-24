@@ -332,7 +332,7 @@ class AppData extends ChangeNotifier {
 
   /// Registra uma leitura para [meterId]. A leitura anterior é sempre a última
   /// leitura conhecida do próprio medidor (ou zero, se for a primeira).
-  Reading addReading({required String meterId, required double currentValue}) {
+  Reading addReading({required String meterId, required double currentValue, String? photoBase64}) {
     final previousValue = lastReadingFor(meterId)?.currentValue ?? 0;
     final reading = Reading(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
@@ -340,6 +340,7 @@ class AppData extends ChangeNotifier {
       previousValue: previousValue,
       currentValue: currentValue,
       createdAt: DateTime.now(),
+      photoBase64: photoBase64,
     );
     _readings.add(reading);
     notifyListeners();
